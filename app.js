@@ -243,11 +243,18 @@ function renderCalendar(blocks) {
       .forEach((block) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `calendar-block block-${block.type}`;
+        const sustainLevel = carbonLevel(block);
+        button.className = `calendar-block block-${block.type} sustain-${sustainLevel}`;
         button.dataset.blockId = block.id;
         button.style.top = `${headerHeight + minutesFromStart(block.start)}px`;
         button.style.height = `${Math.max(38, durationMinutes(block.start, block.end) * (hourHeight / 60))}px`;
-        button.innerHTML = `<strong>${block.title}</strong><small>${timeRange(block.start, block.end)} | ${block.location}</small>`;
+        button.innerHTML = `
+          <strong>${block.title}</strong>
+          <small>
+            <span>${timeRange(block.start, block.end)} | ${block.location}</span>
+            <span class="carbon-mini-pill">${carbonDeltaLabel(block)}</span>
+          </small>
+        `;
         button.addEventListener("click", () => selectBlock(block.id));
         column.appendChild(button);
       });
@@ -455,6 +462,20 @@ function carbonImpactText(block) {
   if (delta < 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, saving ${Math.abs(delta)} kg versus the baseline.`;
   if (delta > 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, adding ${delta} kg versus the baseline.`;
   return `Estimated ${carbon.estimated_co2e_kg} kg CO2e with no baseline change.`;
+}
+
+function carbonLevel(block) {
+  const delta = Number(block.carbon?.delta_co2e_kg || 0);
+  if (delta <= -0.5) return "save-strong";
+  if (delta < 0) return "save";
+  if (delta > 0.2) return "pressure";
+  return "neutral";
+}
+
+function carbonDeltaLabel(block) {
+  const delta = Number(block.carbon?.delta_co2e_kg || 0);
+  if (delta === 0) return "0 kg";
+  return `${delta > 0 ? "+" : ""}${formatKg(delta)} kg`;
 }
 
 function delay(ms) {
