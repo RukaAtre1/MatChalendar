@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatChalendar — Campus Life AI Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;800&family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700&family=Noto+Serif+JP:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:        #161e14;
+      --matcha-d:   #2c4a2e;
+      --matcha:     #3d6b40;
+      --matcha-m:   #5a8f5e;
+      --matcha-l:   #8ab88e;
+      --matcha-ll:  #bfd8c1;
+      --matcha-dust:#deeadf;
+      --washi:      #f2ede3;
+      --cream:      #faf7f2;
+      --gold:       #a07830;
+      --gold-l:     #c9a55a;
+      --text:       #2a3828;
+      --text-mid:   #4a5e47;
+      --text-soft:  #7a9077;
+      --border:     rgba(60,100,60,0.12);
+      --shadow:     rgba(44,74,46,0.10);
+      --r:          12px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{
+      background:var(--washi);
+      color:var(--text);
+      font-family:'Zen Kaku Gothic Antique',sans-serif;
+      font-weight:400;
+      line-height:1.7;
+      overflow-x:hidden;
+    }
+
+    /* ── GRAIN OVERLAY ── */
+    body::before{
+      content:'';position:fixed;inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity:.4;pointer-events:none;z-index:0;
+    }
+
+    /* ── NAV ── */
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 48px;height:64px;
+      background:rgba(242,237,227,0.88);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+    }
+    .nav-logo{
+      font-family:'Shippori Mincho B1',serif;
+      font-weight:800;font-size:1.25rem;
+      color:var(--matcha-d);letter-spacing:.04em;
+    }
+    .nav-logo span{color:var(--gold);}
+    .nav-links{display:flex;gap:32px;align-items:center;}
+    .nav-links a{
+      font-size:.85rem;font-weight:500;
+      color:var(--text-mid);text-decoration:none;
+      letter-spacing:.06em;transition:color .2s;
+    }
+    .nav-links a:hover{color:var(--matcha-d);}
+    .nav-badge{
+      background:var(--matcha-d);color:var(--cream);
+      font-size:.75rem;font-weight:700;letter-spacing:.08em;
+      padding:7px 18px;border-radius:100px;
+      text-decoration:none;transition:background .2s;
+    }
+    .nav-badge:hover{background:var(--matcha);}
+
+    /* ── SECTIONS ── */
+    section{position:relative;z-index:1;}
+
+    /* ── HERO ── */
+    #hero{
+      min-height:100vh;
+      display:grid;grid-template-columns:1fr 1fr;
+      align-items:center;gap:0;
+      padding:80px 0 0;
+      overflow:hidden;
+    }
+    .hero-left{
+      padding:80px 48px 80px 80px;
+      display:flex;flex-direction:column;gap:32px;
+    }
+    .hero-eyebrow{
+      display:inline-flex;align-items:center;gap:10px;
+      font-size:.78rem;font-weight:700;letter-spacing:.14em;
+      color:var(--matcha-m);text-transform:uppercase;
+    }
+    .hero-eyebrow::before{
+      content:'';width:24px;height:1px;background:var(--matcha-m);
+    }
+    .hero-title{
+      font-family:'Shippori Mincho B1',serif;
+      font-weight:800;font-size:clamp(2.8rem,5vw,4.5rem);
+      line-height:1.12;letter-spacing:-.01em;
+      color:var(--ink);
+    }
+    .hero-title .accent{color:var(--matcha-d);}
+    .hero-title .gold{color:var(--gold);}
+    .hero-sub{
+      font-family:'Noto Serif JP',serif;
+      font-size:1.05rem;font-weight:300;
+      color:var(--text-mid);line-height:1.8;
+      max-width:480px;
+    }
+    .hero-sub em{
+      font-style:italic;color:var(--matcha-m);
+    }
+    .hero-cta{
+      display:flex;align-items:center;gap:16px;margin-top:8px;
+    }
+    .btn-primary{
+      background:var(--matcha-d);color:var(--cream);
+      font-family:'Zen Kaku Gothic Antique',sans-serif;
+      font-size:.9rem;font-weight:700;letter-spacing:.06em;
+      padding:14px 32px;border-radius:100px;
+      border:none;cursor:pointer;
+      transition:background .25s,transform .2s,box-shadow .25s;
+      box-shadow:0 4px 20px rgba(44,74,46,0.25);
+    }
+    .btn-primary:hover{
+      background:var(--matcha);transform:translateY(-1px);
+      box-shadow:0 8px 28px rgba(44,74,46,0.3);
+    }
+    .btn-ghost{
+      background:transparent;color:var(--matcha-d);
+      font-size:.9rem;font-weight:500;letter-spacing:.04em;
+      border:1.5px solid var(--matcha-l);
+      padding:13px 28px;border-radius:100px;cursor:pointer;
+      transition:background .2s,color .2s;
+    }
+    .btn-ghost:hover{background:var(--matcha-dust);color:var(--matcha-d);}
+    .hero-tags{
+      display:flex;flex-wrap:wrap;gap:8px;
+    }
+    .tag{
+      background:var(--matcha-dust);color:var(--matcha-d);
+      font-size:.75rem;font-weight:700;letter-spacing:.08em;
+      padding:5px 14px;border-radius:100px;
+      border:1px solid rgba(90,143,94,0.2);
+    }
+    /* Hero right — visual */
+    .hero-right{
+      position:relative;height:100vh;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .hero-orb{
+      position:absolute;
+      width:520px;height:520px;border-radius:50%;
+      background:radial-gradient(ellipse at 35% 40%,
+        rgba(90,143,94,0.28),
+        rgba(44,74,46,0.12) 55%,
+        transparent 75%);
+      filter:blur(2px);
+    }
+    .hero-orb-2{
+      position:absolute;
+      width:320px;height:320px;border-radius:50%;
+      top:15%;right:10%;
+      background:radial-gradient(circle,
+        rgba(160,120,48,0.12),transparent 70%);
+      filter:blur(8px);
+    }
+    .calendar-card{
+      position:relative;z-index:2;
+      background:rgba(255,255,255,0.72);
+      backdrop-filter:blur(16px);
+      border:1px solid rgba(90,143,94,0.18);
+      border-radius:20px;
+      padding:28px;
+      width:380px;
+      box-shadow:0 20px 60px rgba(44,74,46,0.12),0 2px 8px rgba(0,0,0,0.04);
+    }
+    .card-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:20px;
+    }
+    .card-header h4{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:1rem;font-weight:600;color:var(--matcha-d);
+    }
+    .carbon-pill{
+      background:linear-gradient(135deg,var(--matcha-d),var(--matcha-m));
+      color:var(--cream);font-size:.72rem;font-weight:700;
+      letter-spacing:.07em;padding:4px 12px;border-radius:100px;
+    }
+    .cal-blocks{display:flex;flex-direction:column;gap:8px;}
+    .cal-block{
+      display:flex;align-items:center;gap:12px;
+      padding:11px 14px;border-radius:10px;
+      font-size:.82rem;border-left:3px solid transparent;
+      transition:transform .2s,box-shadow .2s;cursor:pointer;
+    }
+    .cal-block:hover{transform:translateX(3px);box-shadow:0 4px 16px var(--shadow);}
+    .cal-block.class{background:rgba(61,107,64,0.08);border-left-color:var(--matcha-d);}
+    .cal-block.meal{background:rgba(160,120,48,0.08);border-left-color:var(--gold);}
+    .cal-block.study{background:rgba(90,143,94,0.10);border-left-color:var(--matcha-m);}
+    .cal-block.walk{background:rgba(139,184,142,0.14);border-left-color:var(--matcha-l);}
+    .cal-block.sleep{background:rgba(191,216,193,0.2);border-left-color:var(--matcha-ll);}
+    .block-time{
+      font-size:.72rem;color:var(--text-soft);
+      font-weight:500;min-width:88px;letter-spacing:.02em;
+    }
+    .block-info{flex:1;}
+    .block-title{font-weight:700;color:var(--text);}
+    .block-loc{font-size:.72rem;color:var(--text-soft);}
+    .block-score{
+      font-size:.7rem;font-weight:700;
+      padding:2px 8px;border-radius:100px;
+      background:var(--matcha-dust);color:var(--matcha-d);
+    }
+    /* Floating JP characters decoration */
+    .jp-deco{
+      position:absolute;
+      font-family:'Noto Serif JP',serif;
+      font-size:8rem;font-weight:300;
+      color:rgba(61,107,64,0.055);
+      line-height:1;user-select:none;pointer-events:none;
+      letter-spacing:-.02em;
+    }
+    .jp-deco-1{top:10%;left:2%;transform:rotate(-4deg);}
+    .jp-deco-2{bottom:15%;right:3%;transform:rotate(6deg);font-size:6rem;}
+
+    /* ── DIVIDER ── */
+    .section-divider{
+      display:flex;align-items:center;gap:16px;
+      padding:0 80px;margin:8px 0;
+    }
+    .section-divider::before,.section-divider::after{
+      content:'';flex:1;height:1px;background:var(--border);
+    }
+    .section-divider span{
+      font-size:.72rem;font-weight:700;letter-spacing:.12em;
+      color:var(--text-soft);text-transform:uppercase;
+    }
+
+    /* ── HOW IT WORKS ── */
+    #how{padding:100px 80px;}
+    .section-label{
+      font-size:.78rem;font-weight:700;letter-spacing:.14em;
+      color:var(--matcha-m);text-transform:uppercase;
+      margin-bottom:14px;display:flex;align-items:center;gap:10px;
+    }
+    .section-label::before{
+      content:'';width:20px;height:1px;background:var(--matcha-m);
+    }
+    .section-title{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:clamp(2rem,3.5vw,3rem);
+      font-weight:800;line-height:1.2;
+      color:var(--ink);margin-bottom:16px;
+    }
+    .section-sub{
+      font-family:'Noto Serif JP',serif;
+      font-size:.98rem;font-weight:300;
+      color:var(--text-mid);max-width:520px;line-height:1.85;
+    }
+    .flow-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:1px;
+      background:var(--border);
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      margin-top:56px;
+    }
+    .flow-step{
+      background:var(--cream);
+      padding:36px 28px;
+      position:relative;
+    }
+    .flow-step:hover{background:#fff;}
+    .flow-num{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:3rem;font-weight:800;
+      color:var(--matcha-dust);
+      line-height:1;margin-bottom:16px;
+      display:block;
+    }
+    .flow-icon{
+      width:44px;height:44px;
+      background:var(--matcha-dust);
+      border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;margin-bottom:16px;
+    }
+    .flow-h{
+      font-weight:700;font-size:.92rem;
+      color:var(--matcha-d);margin-bottom:8px;
+      letter-spacing:.02em;
+    }
+    .flow-p{
+      font-size:.82rem;color:var(--text-mid);line-height:1.65;
+    }
+    .flow-arrow{
+      position:absolute;top:50%;right:-1px;
+      transform:translateY(-50%);
+      color:var(--matcha-l);font-size:1rem;
+      z-index:2;
+    }
+
+    /* ── SKILLS ── */
+    #skills{
+      padding:100px 80px;
+      background:linear-gradient(180deg,var(--washi),rgba(191,216,193,0.15) 50%,var(--washi));
+    }
+    .skills-header{
+      display:grid;grid-template-columns:1fr 1fr;
+      gap:60px;align-items:end;margin-bottom:56px;
+    }
+    .skills-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:16px;
+    }
+    .skill-card{
+      background:rgba(255,255,255,0.65);
+      backdrop-filter:blur(8px);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:24px 20px;
+      position:relative;overflow:hidden;
+      transition:transform .25s,box-shadow .25s,border-color .25s;
+      cursor:default;
+    }
+    .skill-card::before{
+      content:'';
+      position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(90,143,94,0.06),transparent);
+      opacity:0;transition:opacity .3s;
+    }
+    .skill-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 12px 40px rgba(44,74,46,0.12);
+      border-color:var(--matcha-l);
+    }
+    .skill-card:hover::before{opacity:1;}
+    .skill-icon{
+      font-size:1.6rem;margin-bottom:14px;display:block;
+    }
+    .skill-name{
+      font-weight:700;font-size:.88rem;
+      color:var(--matcha-d);letter-spacing:.03em;
+      margin-bottom:8px;
+    }
+    .skill-desc{
+      font-size:.78rem;color:var(--text-mid);
+      line-height:1.6;
+    }
+    .skill-tag{
+      position:absolute;top:14px;right:14px;
+      font-size:.65rem;font-weight:700;
+      letter-spacing:.08em;
+      background:var(--matcha-dust);color:var(--matcha-m);
+      padding:3px 8px;border-radius:100px;
+    }
+
+    /* ── DEMO ── */
+    #demo{padding:100px 80px;}
+    .demo-wrapper{
+      display:grid;grid-template-columns:1fr 1.6fr;
+      gap:40px;align-items:start;margin-top:48px;
+    }
+    .demo-input-panel{
+      background:rgba(255,255,255,0.7);
+      backdrop-filter:blur(12px);
+      border:1px solid var(--border);
+      border-radius:20px;padding:32px;
+      position:sticky;top:80px;
+    }
+    .demo-label{
+      font-size:.75rem;font-weight:700;letter-spacing:.1em;
+      color:var(--text-soft);text-transform:uppercase;margin-bottom:12px;
+    }
+    .demo-textarea{
+      width:100%;background:var(--matcha-dust);
+      border:1.5px solid rgba(90,143,94,0.25);
+      border-radius:12px;padding:16px;
+      font-family:'Zen Kaku Gothic Antique',sans-serif;
+      font-size:.88rem;color:var(--text);
+      line-height:1.7;resize:none;min-height:140px;
+      outline:none;transition:border-color .2s;
+    }
+    .demo-textarea:focus{border-color:var(--matcha-m);}
+    .demo-actions{
+      display:flex;gap:12px;margin-top:16px;
+    }
+    .demo-run{
+      flex:1;background:var(--matcha-d);color:var(--cream);
+      border:none;border-radius:100px;
+      font-family:'Zen Kaku Gothic Antique',sans-serif;
+      font-size:.9rem;font-weight:700;letter-spacing:.06em;
+      padding:13px;cursor:pointer;
+      transition:background .2s,transform .2s,box-shadow .2s;
+      box-shadow:0 4px 16px rgba(44,74,46,0.2);
+    }
+    .demo-run:hover:not(:disabled){
+      background:var(--matcha);transform:translateY(-1px);
+      box-shadow:0 8px 24px rgba(44,74,46,0.28);
+    }
+    .demo-run:disabled{opacity:.6;cursor:not-allowed;}
+    /* Status steps */
+    .status-steps{
+      margin-top:20px;display:flex;flex-direction:column;gap:6px;
+    }
+    .status-step{
+      display:flex;align-items:center;gap:10px;
+      font-size:.82rem;color:var(--text-soft);
+      padding:7px 12px;border-radius:8px;
+      opacity:0;transform:translateY(4px);
+      transition:opacity .35s,transform .35s,color .35s,background .35s;
+    }
+    .status-step.active{
+      opacity:1;transform:none;
+      color:var(--matcha-d);background:var(--matcha-dust);
+    }
+    .status-step.done{
+      opacity:1;transform:none;
+      color:var(--text-soft);background:transparent;
+    }
+    .step-dot{
+      width:7px;height:7px;border-radius:50%;
+      background:var(--matcha-ll);flex-shrink:0;
+      transition:background .3s;
+    }
+    .status-step.active .step-dot{background:var(--matcha);}
+    .status-step.done .step-dot{background:var(--matcha-d);}
+    .step-check{display:none;font-size:.75rem;color:var(--matcha-m);}
+    .status-step.done .step-check{display:inline;}
+    .status-step.done .step-dot{display:none;}
+
+    /* Output panel */
+    .demo-output{
+      display:flex;flex-direction:column;gap:20px;
+    }
+    .output-card{
+      background:rgba(255,255,255,0.72);
+      backdrop-filter:blur(12px);
+      border:1px solid var(--border);
+      border-radius:20px;padding:28px;
+      opacity:0;transform:translateY(12px);
+      transition:opacity .5s,transform .5s;
+    }
+    .output-card.visible{opacity:1;transform:none;}
+    .output-card-header{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:20px;padding-bottom:14px;
+      border-bottom:1px solid var(--border);
+    }
+    .output-card-header h3{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:1.05rem;font-weight:600;color:var(--matcha-d);
+    }
+    /* Calendar grid */
+    .week-cal{
+      display:grid;
+      grid-template-columns:64px repeat(5,1fr);
+      gap:1px;background:var(--border);
+      border-radius:10px;overflow:hidden;
+      border:1px solid var(--border);
+    }
+    .wc-header{
+      background:var(--matcha-dust);
+      padding:8px 6px;
+      font-size:.72rem;font-weight:700;
+      color:var(--matcha-d);text-align:center;
+      letter-spacing:.06em;
+    }
+    .wc-time{
+      background:var(--cream);
+      padding:6px 8px;
+      font-size:.68rem;color:var(--text-soft);
+      text-align:right;font-weight:500;
+    }
+    .wc-cell{
+      background:var(--cream);
+      padding:3px;
+      min-height:36px;
+    }
+    .wc-event{
+      border-radius:6px;padding:4px 7px;
+      font-size:.7rem;font-weight:700;
+      line-height:1.3;
+      opacity:0;transform:scaleY(0.7);transform-origin:top;
+      transition:opacity .4s,transform .4s;
+    }
+    .wc-event.show{opacity:1;transform:scaleY(1);}
+    .wc-event.class{background:rgba(61,107,64,0.12);color:var(--matcha-d);}
+    .wc-event.meal{background:rgba(160,120,48,0.12);color:var(--gold);}
+    .wc-event.study{background:rgba(90,143,94,0.12);color:var(--matcha-m);}
+    .wc-event.walk{background:rgba(139,184,142,0.18);color:#3a6b40;}
+    .wc-event.sleep{background:rgba(191,216,193,0.25);color:var(--text-soft);}
+
+    /* Carbon card */
+    .carbon-card{
+      display:grid;grid-template-columns:auto 1fr;
+      gap:24px;align-items:center;
+    }
+    .carbon-ring{
+      position:relative;width:100px;height:100px;flex-shrink:0;
+    }
+    .carbon-ring svg{transform:rotate(-90deg);}
+    .carbon-ring-center{
+      position:absolute;inset:0;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+    }
+    .carbon-pct{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:1.3rem;font-weight:800;color:var(--matcha-d);
+      line-height:1;
+    }
+    .carbon-pct-sub{
+      font-size:.6rem;color:var(--text-soft);
+      font-weight:500;letter-spacing:.06em;
+      margin-top:2px;
+    }
+    .carbon-info h4{
+      font-weight:700;font-size:.92rem;
+      color:var(--matcha-d);margin-bottom:6px;
+    }
+    .carbon-info p{
+      font-size:.8rem;color:var(--text-mid);line-height:1.65;
+    }
+    .carbon-bars{margin-top:12px;display:flex;flex-direction:column;gap:6px;}
+    .c-bar-row{display:flex;align-items:center;gap:10px;}
+    .c-bar-label{font-size:.72rem;color:var(--text-soft);width:80px;flex-shrink:0;}
+    .c-bar-bg{flex:1;height:6px;background:var(--matcha-dust);border-radius:100px;overflow:hidden;}
+    .c-bar-fill{height:100%;border-radius:100px;background:var(--matcha-m);width:0;transition:width 1s ease;}
+    .c-bar-val{font-size:.7rem;font-weight:700;color:var(--matcha-d);width:40px;text-align:right;}
+
+    /* Explanation drawer */
+    .explain-card{
+      border-top:3px solid var(--gold);
+    }
+    .explain-row{
+      display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;
+    }
+    .explain-score{
+      display:flex;flex-direction:column;align-items:center;
+      background:var(--matcha-dust);border-radius:10px;
+      padding:10px 14px;min-width:70px;
+    }
+    .es-val{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:1.4rem;font-weight:800;color:var(--matcha-d);
+      line-height:1;
+    }
+    .es-label{
+      font-size:.65rem;font-weight:700;letter-spacing:.07em;
+      color:var(--text-soft);margin-top:4px;text-align:center;
+    }
+    .explain-reason{
+      font-family:'Noto Serif JP',serif;
+      font-size:.85rem;font-weight:300;
+      color:var(--text-mid);line-height:1.85;
+      margin-bottom:14px;
+      padding:14px 16px;
+      background:rgba(191,216,193,0.18);
+      border-radius:10px;
+      border-left:3px solid var(--matcha-l);
+    }
+    .explain-skills{
+      display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;
+    }
+    .skill-badge{
+      background:var(--matcha-d);color:var(--cream);
+      font-size:.65rem;font-weight:700;letter-spacing:.07em;
+      padding:4px 10px;border-radius:100px;
+    }
+
+    /* ── FOOTER ── */
+    footer{
+      padding:60px 80px 40px;
+      border-top:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .footer-brand{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:1.3rem;font-weight:800;color:var(--matcha-d);
+    }
+    .footer-brand span{color:var(--gold);}
+    .footer-sub{
+      font-size:.8rem;color:var(--text-soft);margin-top:4px;
+      font-family:'Noto Serif JP',serif;font-weight:300;
+    }
+    .footer-links{
+      display:flex;gap:28px;
+    }
+    .footer-links a{
+      font-size:.82rem;color:var(--text-soft);
+      text-decoration:none;transition:color .2s;letter-spacing:.04em;
+    }
+    .footer-links a:hover{color:var(--matcha-d);}
+    .footer-right{
+      font-size:.78rem;color:var(--text-soft);
+      font-family:'Noto Serif JP',serif;font-weight:300;
+      text-align:right;line-height:1.8;
+    }
+
+    /* ── PHILOSOPHY SECTION ── */
+    #philosophy{
+      padding:80px 80px;
+      text-align:center;
+      position:relative;overflow:hidden;
+    }
+    #philosophy::before{
+      content:'';position:absolute;
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      width:600px;height:600px;border-radius:50%;
+      background:radial-gradient(circle,rgba(90,143,94,0.08),transparent 70%);
+      pointer-events:none;
+    }
+    .philosophy-quote{
+      font-family:'Shippori Mincho B1',serif;
+      font-size:clamp(1.4rem,3vw,2.2rem);
+      font-weight:600;
+      color:var(--matcha-d);
+      line-height:1.5;
+      max-width:700px;margin:0 auto;
+      letter-spacing:.02em;
+    }
+    .philosophy-quote em{
+      font-style:italic;color:var(--gold);
+    }
+    .philosophy-sub{
+      margin-top:20px;
+      font-family:'Noto Serif JP',serif;
+      font-size:.9rem;font-weight:300;
+      color:var(--text-mid);letter-spacing:.05em;
+    }
+    .philosophy-jp{
+      display:block;margin-top:28px;
+      font-family:'Noto Serif JP',serif;
+      font-size:1.8rem;font-weight:300;
+      color:rgba(61,107,64,0.3);
+      letter-spacing:.3em;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up{
+      from{opacity:0;transform:translateY(24px);}
+      to{opacity:1;transform:none;}
+    }
+    @keyframes spin-slow{
+      to{transform:rotate(360deg);}
+    }
+    @keyframes pulse-ring{
+      0%,100%{opacity:.5;transform:scale(1);}
+      50%{opacity:.8;transform:scale(1.03);}
+    }
+    .hero-orb{animation:pulse-ring 6s ease-in-out infinite;}
+    .fade-in{animation:fade-up .7s ease both;}
+    .fade-in-1{animation-delay:.1s;}
+    .fade-in-2{animation-delay:.2s;}
+    .fade-in-3{animation-delay:.35s;}
+    .fade-in-4{animation-delay:.5s;}
+    .fade-in-5{animation-delay:.65s;}
+
+    /* responsive hints */
+    @media(max-width:900px){
+      #hero{grid-template-columns:1fr;min-height:auto;}
+      .hero-right{display:none;}
+      .hero-left{padding:100px 32px 60px;}
+      .flow-grid{grid-template-columns:1fr 1fr;}
+      .skills-grid{grid-template-columns:1fr 1fr;}
+      .demo-wrapper{grid-template-columns:1fr;}
+      #how,#skills,#demo,footer,#philosophy{padding-left:32px;padding-right:32px;}
+      nav{padding:0 24px;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Mat<span>cha</span>lendar</div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#skills">Skills</a>
+    <a href="#demo">Demo</a>
+    <a href="#demo" class="nav-badge">Try Demo →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow fade-in fade-in-1">Carbon-aware AI Planner</div>
+    <h1 class="hero-title fade-in fade-in-2">
+      Your week.<br>
+      <span class="accent">Planned.</span><br>
+      <span class="gold">Sustainably.</span>
+    </h1>
+    <p class="hero-sub fade-in fade-in-3">
+      MatChalendar is a <em>local-first AI planner-orchestrator</em> for campus life —
+      balancing classes, meals, health, transportation, and carbon goals
+      into one intelligent weekly calendar.
+    </p>
+    <div class="hero-tags fade-in fade-in-4">
+      <span class="tag">🌿 Carbon-aware</span>
+      <span class="tag">🔒 Local-first</span>
+      <span class="tag">🏛 UCLA Campus</span>
+      <span class="tag">🤖 AI Orchestrated</span>
+    </div>
+    <div class="hero-cta fade-in fade-in-5">
+      <button class="btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">
+        Generate My Plan
+      </button>
+      <button class="btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">
+        Learn more
+      </button>
+    </div>
+  </div>
+  <div class="hero-right">
+    <div class="jp-deco jp-deco-1">計画</div>
+    <div class="jp-deco jp-deco-2">持続</div>
+    <div class="hero-orb"></div>
+    <div class="hero-orb-2"></div>
+    <div class="calendar-card fade-in fade-in-3">
+      <div class="card-header">
+        <h4>This Week · UCLA Campus</h4>
+        <span class="carbon-pill">↓ 38% Carbon</span>
+      </div>
+      <div class="cal-blocks">
+        <div class="cal-block class">
+          <span class="block-time">10:00 – 14:00</span>
+          <div class="block-info">
+            <div class="block-title">Lecture Block</div>
+            <div class="block-loc">Royce Hall</div>
+          </div>
+          <span class="block-score">📚</span>
+        </div>
+        <div class="cal-block walk">
+          <span class="block-time">14:15 – 14:45</span>
+          <div class="block-info">
+            <div class="block-title">Recovery Walk</div>
+            <div class="block-loc">Bruin Walk</div>
+          </div>
+          <span class="block-score">🥾</span>
+        </div>
+        <div class="cal-block meal">
+          <span class="block-time">18:30 – 19:15</span>
+          <div class="block-info">
+            <div class="block-title">Low-carbon Dinner</div>
+            <div class="block-loc">Bruin Plate</div>
+          </div>
+          <span class="block-score">🌿</span>
+        </div>
+        <div class="cal-block study">
+          <span class="block-time">19:45 – 21:15</span>
+          <div class="block-info">
+            <div class="block-title">Deep Work</div>
+            <div class="block-loc">Powell Library</div>
+          </div>
+          <span class="block-score">⚡</span>
+        </div>
+        <div class="cal-block sleep">
+          <span class="block-time">22:30 – 23:00</span>
+          <div class="block-info">
+            <div class="block-title">Sleep Wind-down</div>
+            <div class="block-loc">Dorm</div>
+          </div>
+          <span class="block-score">🌙</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="section-label">Architecture</div>
+  <h2 class="section-title">How MatChalendar works</h2>
+  <p class="section-sub">
+    A single natural-language prompt triggers a cascade of specialist skills,
+    each contributing recommendations — then the Master Planner makes the
+    final calendar decision.
+  </p>
+
+  <div class="flow-grid">
+    <div class="flow-step">
+      <span class="flow-num">01</span>
+      <div class="flow-icon">💬</div>
+      <div class="flow-h">Intent Parser</div>
+      <p class="flow-p">Understands your goals, detects constraints, and determines planning scope — today, this week, or a custom range.</p>
+      <span class="flow-arrow">›</span>
+    </div>
+    <div class="flow-step">
+      <span class="flow-num">02</span>
+      <div class="flow-icon">🧠</div>
+      <div class="flow-h">Master Planner</div>
+      <p class="flow-p">Selects relevant skills, collects their recommendations, and resolves any conflicts between domains.</p>
+      <span class="flow-arrow">›</span>
+    </div>
+    <div class="flow-step">
+      <span class="flow-num">03</span>
+      <div class="flow-icon">⚙️</div>
+      <div class="flow-h">Specialist Skills</div>
+      <p class="flow-p">8 domain skills — Calendar, Dining, Study, Health, Energy, Transport, Carbon, and Explanation — each return scores and evidence.</p>
+      <span class="flow-arrow">›</span>
+    </div>
+    <div class="flow-step">
+      <span class="flow-num">04</span>
+      <div class="flow-icon">📅</div>
+      <div class="flow-h">Calendar Replanner</div>
+      <p class="flow-p">Assembles an executable weekly calendar with full explanations, carbon tradeoffs, and skill attribution for every block.</p>
+    </div>
+  </div>
+
+  <div style="margin-top:40px;text-align:center;">
+    <div style="display:inline-block;background:var(--matcha-dust);border-radius:100px;padding:10px 28px;font-size:.82rem;font-weight:700;color:var(--matcha-d);letter-spacing:.08em;border:1px solid rgba(90,143,94,0.2);">
+      Skills propose &nbsp;·&nbsp; Planner decides &nbsp;·&nbsp; Calendar renders
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section id="philosophy">
+  <p class="philosophy-quote">
+    "Not just a calendar. Not just a chatbot. <em>A planning system</em> that turns
+    fragmented student decisions into an explainable, executable week."
+  </p>
+  <p class="philosophy-sub">Local AI · Carbon-aware · Privacy-first</p>
+  <span class="philosophy-jp">計画　持続　均衡</span>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="skills-header">
+    <div>
+      <div class="section-label">Skill System</div>
+      <h2 class="section-title">8 Specialist Skills,<br>one coherent plan</h2>
+    </div>
+    <p class="section-sub" style="font-family:'Noto Serif JP',serif;font-weight:300;font-size:.95rem;line-height:1.9;">
+      Each skill is an internal capability, not a separate app. They communicate
+      through the Master Planner — returning recommendations, constraints,
+      scores, and evidence rather than editing the calendar directly.
+    </p>
+  </div>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <span class="skill-tag">FIXED</span>
+      <span class="skill-icon">📅</span>
+      <div class="skill-name">Calendar Skill</div>
+      <p class="skill-desc">Reads fixed events, identifies free slots, and prevents scheduling conflicts.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">DATA</span>
+      <span class="skill-icon">🍱</span>
+      <div class="skill-name">Dining Skill</div>
+      <p class="skill-desc">Recommends UCLA dining options scored by nutrition, timing, and carbon impact.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">DEEP</span>
+      <span class="skill-icon">📖</span>
+      <div class="skill-name">Study Skill</div>
+      <p class="skill-desc">Schedules homework blocks, deep work, and study breaks around deadlines.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">BODY</span>
+      <span class="skill-icon">💪</span>
+      <div class="skill-name">Health Skill</div>
+      <p class="skill-desc">Evaluates meals and activities against health goals, protein needs, and recovery.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">STATE</span>
+      <span class="skill-icon">⚡</span>
+      <div class="skill-name">Energy Skill</div>
+      <p class="skill-desc">Detects low-energy days and softens the schedule — lighter meals, more breaks.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">MOVE</span>
+      <span class="skill-icon">🚌</span>
+      <div class="skill-name">Transportation Skill</div>
+      <p class="skill-desc">Compares walk, bike, bus, and ride-share options by time and carbon cost.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">ECO</span>
+      <span class="skill-icon">🌿</span>
+      <div class="skill-name">Carbon Skill</div>
+      <p class="skill-desc">Tracks weekly carbon budget, detects overages, and recommends compensating actions.</p>
+    </div>
+    <div class="skill-card">
+      <span class="skill-tag">WHY</span>
+      <span class="skill-icon">💡</span>
+      <div class="skill-name">Explanation Skill</div>
+      <p class="skill-desc">Explains every block — timing, tradeoffs, skills used, and carbon impact.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="section-label">Live Demo</div>
+  <h2 class="section-title">Plan your UCLA week</h2>
+  <p class="section-sub">
+    Enter a natural language goal and watch MatChalendar orchestrate your week —
+    running locally on ASUS Ascent GX10.
+  </p>
+
+  <div class="demo-wrapper">
+    <!-- Input Panel -->
+    <div class="demo-input-panel">
+      <div class="demo-label">Your Goal</div>
+      <textarea class="demo-textarea" id="promptInput">Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.</textarea>
+      <div class="demo-actions">
+        <button class="demo-run" id="runBtn" onclick="runDemo()">
+          ✦ Generate Plan
+        </button>
+      </div>
+      <div class="status-steps" id="statusSteps">
+        <div class="status-step" id="step0">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Understanding your goal…</span>
+        </div>
+        <div class="status-step" id="step1">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Checking your class schedule…</span>
+        </div>
+        <div class="status-step" id="step2">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Analyzing dining options…</span>
+        </div>
+        <div class="status-step" id="step3">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Estimating health, energy &amp; carbon tradeoffs…</span>
+        </div>
+        <div class="status-step" id="step4">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Running local planner on ASUS Ascent GX10…</span>
+        </div>
+        <div class="status-step" id="step5">
+          <span class="step-dot"></span><span class="step-check">✓</span>
+          <span>Replanning your weekly calendar…</span>
+        </div>
+      </div>
+
+      <!-- Carbon summary -->
+      <div id="carbonSummary" style="margin-top:20px;display:none;">
+        <div style="background:var(--matcha-dust);border-radius:14px;padding:20px;border:1px solid rgba(90,143,94,0.2);">
+          <div style="font-size:.75rem;font-weight:700;letter-spacing:.1em;color:var(--text-soft);text-transform:uppercase;margin-bottom:12px;">Carbon Budget · This Week</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+            <div style="flex:1;">
+              <div style="background:var(--matcha-ll);border-radius:100px;height:8px;overflow:hidden;">
+                <div id="carbonBar" style="height:100%;width:0;background:linear-gradient(90deg,var(--matcha-m),var(--matcha-d));border-radius:100px;transition:width 1.2s ease;"></div>
+              </div>
+            </div>
+            <span style="font-family:'Shippori Mincho B1',serif;font-weight:800;font-size:1rem;color:var(--matcha-d);" id="carbonPct">0%</span>
+          </div>
+          <div style="font-size:.78rem;color:var(--text-mid);line-height:1.6;">
+            <strong>19.4 kg CO₂e</strong> used of 35 kg target this week.
+            Uber added <strong>+2.1 kg</strong>, offset by low-carbon dinner strategy.
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <span style="background:rgba(160,120,48,0.12);color:var(--gold);font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:100px;">⚠ Transport spike today</span>
+            <span style="background:rgba(61,107,64,0.1);color:var(--matcha-d);font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:100px;">🌿 Dining adjusted</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div class="demo-output" id="demoOutput">
+
+      <!-- Weekly Calendar -->
+      <div class="output-card" id="calCard">
+        <div class="output-card-header">
+          <h3>📅 Weekly Calendar · Mon – Fri</h3>
+          <span style="font-size:.75rem;color:var(--text-soft);font-weight:500;">April 2026</span>
+        </div>
+        <div class="week-cal">
+          <!-- Headers -->
+          <div class="wc-header"></div>
+          <div class="wc-header">MON</div>
+          <div class="wc-header">TUE</div>
+          <div class="wc-header">WED</div>
+          <div class="wc-header">THU</div>
+          <div class="wc-header">FRI</div>
+          <!-- 10am -->
+          <div class="wc-time">10 AM</div>
+          <div class="wc-cell" style="grid-row:span 1">
+            <div class="wc-event class" id="ev-class-m" style="padding:6px 8px;">
+              <div>Lecture</div><div style="font-weight:400;opacity:.75;font-size:.64rem">10–14:00</div>
+            </div>
+          </div>
+          <div class="wc-cell"><div class="wc-event class" id="ev-class-t">Lecture<br><span style="font-size:.64rem;font-weight:400">10–14:00</span></div></div>
+          <div class="wc-cell"></div>
+          <div class="wc-cell"><div class="wc-event class" id="ev-class-th">Lecture<br><span style="font-size:.64rem;font-weight:400">10–12:00</span></div></div>
+          <div class="wc-cell"></div>
+          <!-- 2pm -->
+          <div class="wc-time">2 PM</div>
+          <div class="wc-cell"><div class="wc-event walk" id="ev-walk-m">Recovery Walk<br><span style="font-size:.64rem;font-weight:400">14:15–14:45</span></div></div>
+          <div class="wc-cell"></div>
+          <div class="wc-cell"><div class="wc-event study" id="ev-study-w">Deep Work<br><span style="font-size:.64rem;font-weight:400">14:00–16:00</span></div></div>
+          <div class="wc-cell"></div>
+          <div class="wc-cell"><div class="wc-event walk" id="ev-walk-f">Campus Walk<br><span style="font-size:.64rem;font-weight:400">14:00–14:30</span></div></div>
+          <!-- 6pm -->
+          <div class="wc-time">6 PM</div>
+          <div class="wc-cell"><div class="wc-event meal" id="ev-meal-m">🌿 Dinner<br><span style="font-size:.64rem;font-weight:400">18:30 · Bruin Plate</span></div></div>
+          <div class="wc-cell"><div class="wc-event meal" id="ev-meal-t">Dinner<br><span style="font-size:.64rem;font-weight:400">18:00 · De Neve</span></div></div>
+          <div class="wc-cell"><div class="wc-event meal" id="ev-meal-w">Dinner<br><span style="font-size:.64rem;font-weight:400">18:30 · Bruin Plate</span></div></div>
+          <div class="wc-cell"><div class="wc-event meal" id="ev-meal-th">Dinner<br><span style="font-size:.64rem;font-weight:400">18:00 · De Neve</span></div></div>
+          <div class="wc-cell"><div class="wc-event meal" id="ev-meal-f">Dinner<br><span style="font-size:.64rem;font-weight:400">18:30 · Bruin Plate</span></div></div>
+          <!-- 8pm -->
+          <div class="wc-time">8 PM</div>
+          <div class="wc-cell"><div class="wc-event study" id="ev-study-m">📖 HW Deep Work<br><span style="font-size:.64rem;font-weight:400">19:45–21:15</span></div></div>
+          <div class="wc-cell"></div>
+          <div class="wc-cell"></div>
+          <div class="wc-cell"><div class="wc-event study" id="ev-study-th">Study<br><span style="font-size:.64rem;font-weight:400">19:30–21:00</span></div></div>
+          <div class="wc-cell"></div>
+          <!-- 10pm -->
+          <div class="wc-time">10 PM</div>
+          <div class="wc-cell"><div class="wc-event sleep" id="ev-sleep-m">Wind-down<br><span style="font-size:.64rem;font-weight:400">22:30</span></div></div>
+          <div class="wc-cell"><div class="wc-event sleep" id="ev-sleep-t">Wind-down<br><span style="font-size:.64rem;font-weight:400">22:30</span></div></div>
+          <div class="wc-cell"><div class="wc-event sleep" id="ev-sleep-w">Wind-down<br><span style="font-size:.64rem;font-weight:400">22:00</span></div></div>
+          <div class="wc-cell"><div class="wc-event sleep" id="ev-sleep-th">Wind-down<br><span style="font-size:.64rem;font-weight:400">22:30</span></div></div>
+          <div class="wc-cell"><div class="wc-event sleep" id="ev-sleep-f">Wind-down<br><span style="font-size:.64rem;font-weight:400">23:00</span></div></div>
+        </div>
+      </div>
+
+      <!-- Explanation Card -->
+      <div class="output-card explain-card" id="explainCard">
+        <div class="output-card-header">
+          <h3>💡 Block Explanation — Low-carbon Dinner at Bruin Plate</h3>
+        </div>
+        <div class="explain-reason">
+          You took an Uber today for an urgent event, which increased your transportation carbon impact by 2.1 kg CO₂e.
+          This dinner was shifted to a lower-carbon plant-based option at Bruin Plate to help keep your weekly carbon target on track,
+          while still meeting your protein and energy needs for tonight's homework session.
+        </div>
+        <div class="explain-row">
+          <div class="explain-score"><span class="es-val">86</span><span class="es-label">TIME</span></div>
+          <div class="explain-score"><span class="es-val">90</span><span class="es-label">HEALTH</span></div>
+          <div class="explain-score"><span class="es-val">82</span><span class="es-label">ENERGY</span></div>
+          <div class="explain-score"><span class="es-val">94</span><span class="es-label">SUSTAIN</span></div>
+          <div class="explain-score" style="background:rgba(61,107,64,0.12);">
+            <span class="es-val" style="color:var(--matcha)">92</span>
+            <span class="es-label">CARBON</span>
+          </div>
+        </div>
+        <div style="margin-top:14px;font-size:.78rem;color:var(--text-mid);">
+          <strong>Carbon impact:</strong> 0.7 kg CO₂e estimated &nbsp;·&nbsp; –1.1 kg vs original option
+        </div>
+        <div class="explain-skills">
+          <span class="skill-badge">Dining Skill</span>
+          <span class="skill-badge">Carbon Skill</span>
+          <span class="skill-badge">Health Skill</span>
+          <span class="skill-badge">Energy Skill</span>
+          <span class="skill-badge">Calendar Skill</span>
+        </div>
+      </div>
+
+    </div><!-- /demo-output -->
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Mat<span>Cha</span>lendar</div>
+    <div class="footer-sub">Local-first · Carbon-aware · Campus AI Planner</div>
+  </div>
+  <div class="footer-links">
+    <a href="#">Architecture</a>
+    <a href="#">Agentverse</a>
+    <a href="#">LA Hacks 2026</a>
+    <a href="#">ASUS GX10</a>
+  </div>
+  <div class="footer-right">
+    Built for LA Hacks 2026<br>
+    <span style="font-family:'Noto Serif JP';font-weight:300;color:rgba(122,144,119,0.5);">抹茶・計画・持続可能性</span>
+  </div>
+</footer>
+
+<script>
+  let running = false;
+
+  function runDemo() {
+    if (running) return;
+    running = true;
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.textContent = '…Processing';
+
+    // Hide output cards
+    document.querySelectorAll('.output-card').forEach(c => {
+      c.classList.remove('visible');
+    });
+    document.querySelectorAll('.wc-event').forEach(e => e.classList.remove('show'));
+    document.getElementById('carbonSummary').style.display = 'none';
+    document.getElementById('carbonBar').style.width = '0';
+
+    const steps = [0,1,2,3,4,5];
+    steps.forEach(i => {
+      const el = document.getElementById('step'+i);
+      el.classList.remove('active','done');
+    });
+
+    let delay = 0;
+    steps.forEach((i, idx) => {
+      const el = document.getElementById('step'+i);
+      // activate
+      setTimeout(() => {
+        el.classList.add('active');
+      }, delay);
+      delay += 700;
+      // done
+      setTimeout(() => {
+        el.classList.remove('active');
+        el.classList.add('done');
+      }, delay);
+    });
+
+    // Show calendar card
+    setTimeout(() => {
+      const calCard = document.getElementById('calCard');
+      calCard.classList.add('visible');
+
+      // Stagger events
+      const events = [
+        'ev-class-m','ev-class-t','ev-class-th',
+        'ev-walk-m','ev-walk-f',
+        'ev-meal-m','ev-meal-t','ev-meal-w','ev-meal-th','ev-meal-f',
+        'ev-study-m','ev-study-w','ev-study-th',
+        'ev-sleep-m','ev-sleep-t','ev-sleep-w','ev-sleep-th','ev-sleep-f'
+      ];
+      events.forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('show');
+        }, i * 80);
+      });
+    }, delay + 200);
+
+    // Show carbon
+    setTimeout(() => {
+      const cs = document.getElementById('carbonSummary');
+      cs.style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('carbonBar').style.width = '55%';
+        document.getElementById('carbonPct').textContent = '55%';
+      }, 100);
+    }, delay + 400);
+
+    // Show explanation card
+    setTimeout(() => {
+      document.getElementById('explainCard').classList.add('visible');
+    }, delay + 900);
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '✦ Regenerate Plan';
+      running = false;
+    }, delay + 1000);
+  }
+
+  // Auto-run on load with a small delay
+  window.addEventListener('load', () => {
+    setTimeout(runDemo, 800);
+  });
+
+  // Intersection observer for section fade-ins
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'none';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.flow-step,.skill-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    io.observe(el);
+  });
+</script>
+</body>
+</html>

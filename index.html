@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MatChalendar — local-first AI campus planner for UCLA daily life. Sustainability, balance, and intelligent weekly planning." />
+    <title>MatChalendar — Campus Life AI Planner</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <p class="mood-text">計画　持続　均衡</p>
+          <h1>Mat<span class="gold">Cha</span>lendar</h1>
+        </div>
+        <div class="local-badge" aria-label="Local planner status">
+          <span class="status-dot"></span>
+          ASUS GX10 · Local AI planner
+        </div>
+      </header>
+
+      <section class="workspace" aria-label="MatChalendar one-screen demo">
+        <aside class="control-panel" aria-label="Planner controls">
+          <section class="carbon-card" aria-label="Weekly carbon budget">
+            <div class="card-row">
+              <div>
+                <p class="kicker">Weekly carbon budget</p>
+                <div class="carbon-number"><strong>19.4</strong><span>/ 35 kg CO₂e</span></div>
+              </div>
+              <span class="budget-pill">55%</span>
+            </div>
+            <div class="budget-meter" aria-hidden="true"><span></span></div>
+            <p class="quiet-copy">Slightly above today's pace after an emergency Uber. The planner compensates with calmer meal and route choices.</p>
+          </section>
+
+          <form id="plannerForm" class="goal-form">
+            <label for="promptInput">Goal input</label>
+            <textarea id="promptInput" rows="8">Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.</textarea>
+            <button class="primary-button" type="submit">Run Planner</button>
+            <ol id="compactTrace" class="compact-trace" hidden></ol>
+          </form>
+        </aside>
+
+        <section class="calendar-panel" aria-label="Weekly calendar">
+          <div class="calendar-header">
+            <div>
+              <p class="kicker">UCLA daily plan</p>
+              <h2 id="planSummary">Run the planner to build the week.</h2>
+            </div>
+            <button id="regenerateBtn" class="secondary-button" type="button">Replan</button>
+          </div>
+          <div id="calendarGrid" class="calendar-grid" aria-live="polite"></div>
+        </section>
+
+        <aside class="detail-drawer" aria-label="Contextual explanation drawer">
+          <div id="drawerEmpty" class="drawer-empty"></div>
+
+          <div id="drawerContent" class="drawer-content" hidden>
+            <div class="drawer-heading">
+              <span id="blockType" class="type-pill"></span>
+              <button id="closeDrawer" class="close-button" type="button" aria-label="Close explanation">×</button>
+            </div>
+            <h2 id="blockTitle"></h2>
+            <p id="blockMeta" class="block-meta"></p>
+
+            <section class="detail-section">
+              <p class="kicker">Reason</p>
+              <p id="blockReason"></p>
+            </section>
+
+            <section class="detail-section">
+              <p class="kicker">Impact</p>
+              <p id="blockImpact"></p>
+            </section>
+
+            <section class="impact-card">
+              <p class="kicker">Carbon</p>
+              <div class="impact-row"><span>Estimated carbon</span><strong id="carbonEstimate"></strong></div>
+              <div class="impact-row"><span>Carbon delta</span><strong id="carbonDelta"></strong></div>
+            </section>
+
+            <section class="detail-section">
+              <p class="kicker">Scores</p>
+              <div id="scoreStack" class="score-stack"></div>
+            </section>
+
+            <section class="detail-section">
+              <p class="kicker">Skills used</p>
+              <div id="drawerSkills" class="skill-chips"></div>
+            </section>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
