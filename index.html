@@ -11,12 +11,12 @@
     <main class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <p class="mood-text">Plan. Sustain. Balance.</p>
+          <p class="mood-text">Sustain the Spark</p>
           <h1>Mat<span class="gold">Cha</span>lendar</h1>
         </div>
         <div class="local-badge" aria-label="Local planner status">
           <span class="status-dot"></span>
-          ASUS GX10 integration point
+          Local AI climate planner
         </div>
       </header>
 
@@ -25,7 +25,7 @@
           <section class="carbon-card" aria-label="Weekly carbon budget">
             <div class="card-row">
               <div>
-                <p class="kicker">Weekly carbon budget</p>
+                <p class="kicker">Weekly climate budget</p>
                 <div class="carbon-number"><strong id="carbonCurrent">19.4</strong><span id="carbonTarget">/ 35 kg CO2e</span></div>
               </div>
               <span id="carbonPercent" class="budget-pill">55%</span>
@@ -35,22 +35,17 @@
           </section>
 
           <form id="plannerForm" class="goal-form">
-            <label for="promptInput">Goal input</label>
-            <textarea id="promptInput" rows="8">Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.</textarea>
+            <label for="promptInput">Climate goal</label>
+            <textarea id="promptInput" rows="8">Plan my UCLA week to reduce emissions and waste. I had to take an Uber today, have class from 10 to 2, and need homework time tonight. Help me stay under my weekly carbon budget.</textarea>
             <button class="primary-button" type="submit">Run Planner</button>
             <ol id="compactTrace" class="compact-trace" hidden></ol>
           </form>
-
-          <section class="skill-trace-card" aria-label="Skills used trace">
-            <p class="kicker">Skills used</p>
-            <div id="skillsTrace" class="skill-chips muted"></div>
-          </section>
         </aside>
 
         <section class="calendar-panel" aria-label="Weekly calendar">
           <div class="calendar-header">
             <div>
-              <p class="kicker">UCLA daily plan</p>
+              <p class="kicker">Low-carbon weekly plan</p>
               <h2 id="planSummary">Run the planner to build the week.</h2>
             </div>
             <button id="regenerateBtn" class="secondary-button" type="button">Replan</button>
@@ -69,35 +64,19 @@
             <h2 id="blockTitle"></h2>
             <p id="blockMeta" class="block-meta"></p>
 
-            <section class="detail-section">
-              <p class="kicker">Reason</p>
-              <p id="blockReason"></p>
-            </section>
-
-            <section class="detail-section">
-              <p class="kicker">Impact</p>
-              <p id="blockImpact"></p>
-            </section>
-
             <section class="impact-card">
-              <p class="kicker">Carbon</p>
-              <div class="impact-row"><span>Estimated carbon</span><strong id="carbonEstimate"></strong></div>
-              <div class="impact-row"><span>Carbon delta</span><strong id="carbonDelta"></strong></div>
+              <p class="kicker">Climate impact</p>
+              <div class="impact-row"><span>Estimated footprint</span><strong id="carbonEstimate"></strong></div>
             </section>
 
-            <section class="detail-section">
-              <p class="kicker">Scores</p>
-              <div id="scoreStack" class="score-stack"></div>
+            <section id="menuSection" class="menu-section" hidden>
+              <p class="kicker">Menu</p>
+              <div id="menuSections" class="menu-sections"></div>
             </section>
 
-            <section class="detail-section">
-              <p class="kicker">Skills used</p>
-              <div id="drawerSkills" class="skill-chips"></div>
-            </section>
-
-            <section class="detail-section">
-              <p class="kicker">Data sources</p>
-              <div id="drawerSources" class="skill-chips muted"></div>
+            <section id="choicesSection" class="choices-section" hidden>
+              <p class="kicker">Choices</p>
+              <div id="diningChoices" class="dining-choices"></div>
             </section>
           </div>
         </aside>
