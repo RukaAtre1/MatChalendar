@@ -31,7 +31,7 @@ const scoreLabels = {
 };
 
 const fallbackPlanResponse = {
-  summary: "Your week was replanned to balance class, homework, energy, meals, and your carbon reduction goal.",
+  summary: "A low-carbon campus week that turns everyday student routines into climate actions.",
   generated_by: "local_fallback_plan_response",
   metadata: {
     generated_by: "local_fallback_plan_response",
@@ -73,170 +73,214 @@ const fallbackPlanResponse = {
   plan_blocks: [
     {
       id: "block_class_mon",
-      title: "Class block",
+      title: "PHYSCI 5",
       type: "class",
       start: "2026-04-27T10:00:00",
       end: "2026-04-27T14:00:00",
-      location: "UCLA campus",
+      location: "Boelter Hall",
       reason: "This fixed class block is protected before meals, recovery, and study work are placed around it.",
       scores: { time: 0.98, health: 0.66, energy: 0.7, sustainability: 0.72, carbon: 0.84 },
-      carbon: { estimated_co2e_kg: 0.1, baseline_co2e_kg: 0.1, delta_co2e_kg: 0, category: "calendar" },
+      carbon: { estimated_co2e_kg: 0.1, category: "calendar" },
       skills_used: ["calendar"],
       data_sources: ["user_schedule"]
     },
     {
       id: "block_walk_mon",
-      title: "Recovery walk",
+      title: "Walk break",
       type: "recovery",
       start: "2026-04-27T14:15:00",
       end: "2026-04-27T14:45:00",
       location: "Bruin Walk",
       reason: "A short walk after class creates an energy reset without adding more transportation emissions after the emergency Uber.",
       scores: { time: 0.88, health: 0.84, energy: 0.8, sustainability: 0.9, carbon: 0.96 },
-      carbon: { estimated_co2e_kg: 0, baseline_co2e_kg: 0.4, delta_co2e_kg: -0.4, category: "transportation" },
+      carbon: { estimated_co2e_kg: 0, category: "transportation" },
       skills_used: ["calendar", "transportation", "energy", "health", "sustainability_carbon"],
       data_sources: ["carbon_factors", "user_schedule"]
     },
     {
       id: "block_dinner_mon",
-      title: "Low-carbon dinner at Bruin Plate",
+      title: "Bruin Plate",
       type: "meal",
       start: "2026-04-27T18:30:00",
       end: "2026-04-27T19:15:00",
       location: "Bruin Plate",
       reason: "The emergency Uber raised today's transportation impact, so dinner shifts toward a plant-forward option while preserving protein and evening energy.",
       scores: { time: 0.86, health: 0.9, energy: 0.82, sustainability: 0.94, carbon: 0.92 },
-      carbon: { estimated_co2e_kg: 0.7, baseline_co2e_kg: 1.8, delta_co2e_kg: -1.1, category: "dining" },
+      carbon: { estimated_co2e_kg: 0.7, category: "dining" },
+      menu_sections: [
+        { station: "Freshly Bowled", items: [{ name: "Create-Your-Own Omelet Bar", quantity: 0 }] },
+        { station: "Harvest", items: [{ name: "Plant-based grain bowl", quantity: 1 }, { name: "Seasonal vegetables", quantity: 1 }] }
+      ],
+      dining_choices: [
+        {
+          dining_hall: "De Neve",
+          estimated_co2e_kg: 0.6,
+          menu_sections: [
+            { station: "Harvest", items: [{ name: "Lentil vegetable plate", quantity: 1 }, { name: "Seasonal greens", quantity: 1 }] },
+            { station: "Freshly Bowled", items: [{ name: "Build-your-own grain bowl", quantity: 0 }] }
+          ]
+        },
+        {
+          dining_hall: "Epicuria",
+          estimated_co2e_kg: 0.8,
+          menu_sections: [
+            { station: "Mediterranean Table", items: [{ name: "Chickpea vegetable stew", quantity: 1 }, { name: "Herbed couscous", quantity: 1 }] },
+            { station: "Garden", items: [{ name: "Seasonal greens", quantity: 1 }] }
+          ]
+        }
+      ],
       skills_used: ["dining", "sustainability_carbon", "health", "energy", "calendar"],
       data_sources: ["ucla_dining_mock", "carbon_factors", "local_planner"]
     },
     {
       id: "block_study_mon",
-      title: "Homework deep work",
+      title: "Math homework",
       type: "study",
       start: "2026-04-27T19:45:00",
       end: "2026-04-27T21:15:00",
       location: "Powell Library",
       reason: "Homework stays tonight, but starts after dinner and a transition buffer so the plan does not stack heavy work immediately after class.",
       scores: { time: 0.89, health: 0.72, energy: 0.78, sustainability: 0.8, carbon: 0.88 },
-      carbon: { estimated_co2e_kg: 0.05, baseline_co2e_kg: 0.2, delta_co2e_kg: -0.15, category: "study" },
+      carbon: { estimated_co2e_kg: 0.05, category: "study" },
       skills_used: ["study", "calendar", "energy", "explanation"],
       data_sources: ["user_schedule", "local_planner"]
     },
     {
       id: "block_winddown_mon",
-      title: "Sleep wind-down",
+      title: "Wind-down",
       type: "rest",
       start: "2026-04-27T22:30:00",
       end: "2026-04-27T23:00:00",
       location: "Dorm",
       reason: "A short wind-down block protects recovery after a day with class, emergency travel, and homework.",
       scores: { time: 0.82, health: 0.88, energy: 0.86, sustainability: 0.74, carbon: 0.9 },
-      carbon: { estimated_co2e_kg: 0, baseline_co2e_kg: 0, delta_co2e_kg: 0, category: "rest" },
+      carbon: { estimated_co2e_kg: 0, category: "rest" },
       skills_used: ["health", "energy", "calendar"],
       data_sources: ["local_planner"]
     },
     {
       id: "block_transit_tue",
-      title: "Transit-first commute",
+      title: "Big Blue Bus",
       type: "commute",
       start: "2026-04-28T09:20:00",
       end: "2026-04-28T09:50:00",
       location: "Big Blue Bus",
       reason: "Tomorrow's route uses transit where the schedule allows, compensating for today's ride-share without creating a rushed morning.",
       scores: { time: 0.78, health: 0.7, energy: 0.74, sustainability: 0.91, carbon: 0.93 },
-      carbon: { estimated_co2e_kg: 0.3, baseline_co2e_kg: 1.2, delta_co2e_kg: -0.9, category: "transportation" },
+      carbon: { estimated_co2e_kg: 0.3, category: "transportation" },
       skills_used: ["transportation", "sustainability_carbon", "calendar"],
       data_sources: ["carbon_factors", "user_schedule"]
     },
     {
       id: "block_lunch_tue",
-      title: "Plant-forward lunch",
+      title: "De Neve",
       type: "meal",
       start: "2026-04-28T12:00:00",
       end: "2026-04-28T12:45:00",
       location: "De Neve",
       reason: "A lighter lunch keeps afternoon energy steady while continuing the lower-carbon dining pattern.",
       scores: { time: 0.84, health: 0.88, energy: 0.85, sustainability: 0.92, carbon: 0.9 },
-      carbon: { estimated_co2e_kg: 0.6, baseline_co2e_kg: 1.5, delta_co2e_kg: -0.9, category: "dining" },
+      carbon: { estimated_co2e_kg: 0.6, category: "dining" },
+      menu_sections: [
+        { station: "Harvest", items: [{ name: "Lentil vegetable plate", quantity: 1 }, { name: "Seasonal greens", quantity: 1 }] },
+        { station: "Freshly Bowled", items: [{ name: "Build-your-own grain bowl", quantity: 0 }] }
+      ],
+      dining_choices: [
+        {
+          dining_hall: "Bruin Plate",
+          estimated_co2e_kg: 0.7,
+          menu_sections: [
+            { station: "Freshly Bowled", items: [{ name: "Create-Your-Own Omelet Bar", quantity: 0 }] },
+            { station: "Harvest", items: [{ name: "Plant-based grain bowl", quantity: 1 }, { name: "Seasonal vegetables", quantity: 1 }] }
+          ]
+        },
+        {
+          dining_hall: "Epicuria",
+          estimated_co2e_kg: 0.8,
+          menu_sections: [
+            { station: "Mediterranean Table", items: [{ name: "Chickpea vegetable stew", quantity: 1 }, { name: "Herbed couscous", quantity: 1 }] },
+            { station: "Garden", items: [{ name: "Seasonal greens", quantity: 1 }] }
+          ]
+        }
+      ],
       skills_used: ["dining", "health", "energy", "sustainability_carbon"],
       data_sources: ["ucla_dining_mock", "carbon_factors"]
     },
     {
       id: "block_review_wed",
-      title: "Review sprint",
+      title: "CS review",
       type: "study",
       start: "2026-04-29T15:00:00",
       end: "2026-04-29T16:15:00",
-      location: "Study commons",
+      location: "Study Commons",
       reason: "A midweek review prevents Monday night from becoming the only academic catch-up slot.",
       scores: { time: 0.84, health: 0.7, energy: 0.79, sustainability: 0.76, carbon: 0.86 },
-      carbon: { estimated_co2e_kg: 0.05, baseline_co2e_kg: 0.05, delta_co2e_kg: 0, category: "study" },
+      carbon: { estimated_co2e_kg: 0.05, category: "study" },
       skills_used: ["study", "calendar", "energy"],
       data_sources: ["user_schedule"]
     },
     {
       id: "block_workout_thu",
-      title: "Light workout",
+      title: "Wooden workout",
       type: "recovery",
       start: "2026-04-30T16:00:00",
       end: "2026-04-30T17:00:00",
       location: "John Wooden Center",
       reason: "A light workout lands in a low-conflict window and supports health without making the week feel overpacked.",
       scores: { time: 0.8, health: 0.92, energy: 0.75, sustainability: 0.78, carbon: 0.88 },
-      carbon: { estimated_co2e_kg: 0.02, baseline_co2e_kg: 0.02, delta_co2e_kg: 0, category: "health" },
+      carbon: { estimated_co2e_kg: 0.02, category: "health" },
       skills_used: ["health", "energy", "calendar"],
       data_sources: ["local_planner"]
     },
     {
       id: "block_market_fri",
-      title: "Low-waste grocery loop",
+      title: "Westwood grocery",
       type: "commute",
       start: "2026-05-01T17:15:00",
       end: "2026-05-01T18:00:00",
       location: "Westwood Village",
       reason: "A walkable grocery stop avoids a short ride-share trip and sets up lower-waste weekend meals.",
       scores: { time: 0.82, health: 0.78, energy: 0.74, sustainability: 0.93, carbon: 0.91 },
-      carbon: { estimated_co2e_kg: 0, baseline_co2e_kg: 0.8, delta_co2e_kg: -0.8, category: "transportation" },
+      carbon: { estimated_co2e_kg: 0, category: "transportation" },
       skills_used: ["transportation", "sustainability_carbon", "dining", "calendar"],
       data_sources: ["carbon_factors", "local_planner"]
     },
     {
       id: "block_dinner_fri",
-      title: "Plant-forward dinner",
+      title: "Dorm dinner",
       type: "meal",
       start: "2026-05-01T18:30:00",
       end: "2026-05-01T19:15:00",
       location: "Dorm kitchen",
       reason: "Dinner uses the grocery stop to keep the meal low-carbon and reduce packaging waste before the weekend.",
       scores: { time: 0.8, health: 0.86, energy: 0.82, sustainability: 0.95, carbon: 0.93 },
-      carbon: { estimated_co2e_kg: 0.5, baseline_co2e_kg: 1.7, delta_co2e_kg: -1.2, category: "dining" },
+      carbon: { estimated_co2e_kg: 0.5, category: "dining" },
       skills_used: ["dining", "health", "energy", "sustainability_carbon"],
       data_sources: ["carbon_factors", "local_planner"]
     },
     {
       id: "block_bike_sat",
-      title: "Bike study trip",
+      title: "Study cafe",
       type: "study",
       start: "2026-05-02T10:30:00",
       end: "2026-05-02T12:00:00",
       location: "Study cafe",
       reason: "A weekend study block is paired with biking instead of a car trip, keeping academic progress and carbon goals aligned.",
       scores: { time: 0.83, health: 0.8, energy: 0.84, sustainability: 0.9, carbon: 0.92 },
-      carbon: { estimated_co2e_kg: 0.05, baseline_co2e_kg: 0.7, delta_co2e_kg: -0.65, category: "transportation" },
+      carbon: { estimated_co2e_kg: 0.05, category: "transportation" },
       skills_used: ["study", "transportation", "energy", "sustainability_carbon"],
       data_sources: ["carbon_factors", "user_schedule"]
     },
     {
       id: "block_meal_prep_sun",
-      title: "Low-waste meal prep",
+      title: "Meal prep",
       type: "meal",
       start: "2026-05-03T17:00:00",
       end: "2026-05-03T18:15:00",
       location: "Dorm kitchen",
       reason: "Sunday meal prep turns leftover groceries into weekday meals, reducing food waste and lowering next week's dining impact.",
       scores: { time: 0.78, health: 0.88, energy: 0.82, sustainability: 0.96, carbon: 0.94 },
-      carbon: { estimated_co2e_kg: 0.4, baseline_co2e_kg: 1.6, delta_co2e_kg: -1.2, category: "dining" },
+      carbon: { estimated_co2e_kg: 0.4, category: "dining" },
       skills_used: ["dining", "health", "energy", "sustainability_carbon", "calendar"],
       data_sources: ["carbon_factors", "local_planner"]
     }
@@ -260,7 +304,10 @@ const drawerEmpty = document.querySelector("#drawerEmpty");
 const drawerContent = document.querySelector("#drawerContent");
 const closeDrawer = document.querySelector("#closeDrawer");
 const promptInput = document.querySelector("#promptInput");
-const skillsTrace = document.querySelector("#skillsTrace");
+const menuSection = document.querySelector("#menuSection");
+const menuSections = document.querySelector("#menuSections");
+const choicesSection = document.querySelector("#choicesSection");
+const diningChoices = document.querySelector("#diningChoices");
 const plannerBadge = document.querySelector("#plannerBadge");
 const plannerMeta = document.querySelector("#plannerMeta");
 const memoryCard = document.querySelector("#memoryCard");
@@ -322,17 +369,20 @@ function renderCalendar(blocks) {
       .forEach((block) => {
         const button = document.createElement("button");
         button.type = "button";
-        const sustainLevel = carbonLevel(block);
-        button.className = `calendar-block block-${block.type} sustain-${sustainLevel}`;
+        const footprintLevel = carbonLevel(block);
+        button.className = `calendar-block block-${block.type} footprint-${footprintLevel}`;
         button.dataset.blockId = block.id;
         button.style.top = `${headerHeight + minutesFromStart(block.start)}px`;
         button.style.height = `${Math.max(38, durationMinutes(block.start, block.end) * (hourHeight / 60))}px`;
         button.innerHTML = `
-          <strong>${block.title}</strong>
-          <small>
-            <span>${timeRange(block.start, block.end)} | ${block.location}</span>
-            <span class="carbon-mini-pill">${carbonDeltaLabel(block)}</span>
-          </small>
+          <span class="block-top">
+            <strong>${calendarBlockTitle(block)}</strong>
+            <time>${compactTimeRange(block.start, block.end)}</time>
+          </span>
+          <span class="block-bottom">
+            <span>${block.location}</span>
+            <span class="carbon-mini-pill">${carbonFootprintLabel(block)}</span>
+          </span>
         `;
         button.addEventListener("click", () => selectBlock(block.id));
         column.appendChild(button);
@@ -352,19 +402,13 @@ function renderCalendar(blocks) {
 function normalizeBlock(block) {
   return {
     ...block,
-    day: block.day || dayFromIso(block.start),
-    explanation: block.explanation || {
-      impact: carbonImpactText(block),
-      skills_used: block.skills_used || [],
-      data_sources: block.data_sources || []
-    }
+    day: block.day || dayFromIso(block.start)
   };
 }
 
 function applyPlan(plan) {
   renderCalendar(plan.plan_blocks || []);
   renderCarbonBudget(plan.carbon_budget);
-  renderSkillsTrace(plan.skills_used || plan.intent?.skills_used || collectSkills(plan.plan_blocks || []));
   renderPlannerMetadata(plan);
   renderMemorySuggestion(plan.memory_update_suggestion);
   planSummary.textContent = plan.summary || "PlanResponse generated.";
@@ -415,16 +459,6 @@ function renderCarbonBudget(budget) {
   document.querySelector("#carbonStatus").textContent = carbonStatusText(budget);
 }
 
-function renderSkillsTrace(skills) {
-  skillsTrace.innerHTML = skills
-    .map((skill) => `<span class="skill-chip">${skillLabels[skill] || formatLabel(skill)}</span>`)
-    .join("");
-}
-
-function collectSkills(blocks) {
-  return [...new Set(blocks.flatMap((block) => block.skills_used || []))];
-}
-
 function carbonStatusText(budget) {
   const status = formatLabel(budget.status);
   const strategy = formatLabel(budget.adjustment_strategy);
@@ -448,36 +482,85 @@ function selectBlock(blockId) {
   document.querySelector("#blockType").textContent = block.type;
   document.querySelector("#blockTitle").textContent = block.title;
   document.querySelector("#blockMeta").textContent = `${block.day} | ${timeRange(block.start, block.end)} | ${block.location}`;
-  document.querySelector("#blockReason").textContent = block.reason;
-  document.querySelector("#blockImpact").textContent = block.explanation.impact;
-  document.querySelector("#carbonEstimate").textContent = `${block.carbon.estimated_co2e_kg} kg CO2e`;
-
-  const delta = block.carbon.delta_co2e_kg;
-  const deltaEl = document.querySelector("#carbonDelta");
-  deltaEl.textContent = `${delta > 0 ? "+" : ""}${delta} kg CO2e`;
-  deltaEl.className = delta < 0 ? "delta-good" : delta > 0 ? "delta-warn" : "";
-
-  document.querySelector("#scoreStack").innerHTML = Object.entries(block.scores)
-    .map(([key, value]) => scoreRow(key, value))
-    .join("");
-
-  document.querySelector("#drawerSkills").innerHTML = block.skills_used
-    .map((skill) => `<span class="skill-chip">${skillLabels[skill] || formatLabel(skill)}</span>`)
-    .join("");
-
-  document.querySelector("#drawerSources").innerHTML = (block.data_sources || [])
-    .map((source) => `<span class="skill-chip">${formatLabel(source)}</span>`)
-    .join("");
+  document.querySelector("#carbonEstimate").textContent = `${formatKg(block.carbon?.estimated_co2e_kg || 0)} kg CO2e`;
+  renderMenu(block);
+  renderDiningChoices(block);
 }
 
-function scoreRow(key, value) {
-  const score = Math.round(value * 100);
+function renderMenu(block) {
+  const sections = Array.isArray(block.menu_sections) ? block.menu_sections : [];
+  const shouldShowMenu = block.type === "meal" && sections.length > 0;
+
+  menuSection.hidden = !shouldShowMenu;
+  menuSections.innerHTML = shouldShowMenu
+    ? sections
+        .map((section) => `
+          <article class="menu-station">
+            <h3>${escapeHtml(section.station)}</h3>
+            <ul>
+              ${(section.items || []).map(menuItemMarkup).join("")}
+            </ul>
+          </article>
+        `)
+        .join("")
+    : "";
+}
+
+function renderDiningChoices(block) {
+  const choices = Array.isArray(block.dining_choices)
+    ? block.dining_choices.filter((choice) => choice.dining_hall !== block.location)
+    : [];
+  const shouldShowChoices = block.type === "meal" && choices.length > 0;
+
+  choicesSection.hidden = !shouldShowChoices;
+  diningChoices.innerHTML = shouldShowChoices
+    ? choices.map((choice, index) => diningChoiceMarkup(choice, index)).join("")
+    : "";
+
+  if (!shouldShowChoices) return;
+
+  diningChoices.querySelectorAll(".dining-choice").forEach((choiceEl) => {
+    choiceEl.addEventListener("toggle", () => {
+      if (!choiceEl.open) return;
+      diningChoices.querySelectorAll(".dining-choice").forEach((otherEl) => {
+        if (otherEl !== choiceEl) otherEl.open = false;
+      });
+    });
+  });
+}
+
+function diningChoiceMarkup(choice, index) {
+  const sections = Array.isArray(choice.menu_sections) ? choice.menu_sections : [];
   return `
-    <div class="score-row">
-      <span>${scoreLabels[key] || formatLabel(key)}</span>
-      <div class="score-bar"><span style="width: ${score}%"></span></div>
-      <strong>${score}</strong>
-    </div>
+    <details class="dining-choice" ${index === 0 ? "open" : ""}>
+      <summary>
+        <span class="choice-name">${escapeHtml(choice.dining_hall)}</span>
+        <strong>${formatKg(choice.estimated_co2e_kg || 0)} kg CO2e</strong>
+        <span class="choice-arrow" aria-hidden="true">›</span>
+      </summary>
+      <div class="choice-menu">
+        ${sections.map((section) => `
+          <article class="menu-station">
+            <h3>${escapeHtml(section.station)}</h3>
+            <ul>
+              ${(section.items || []).map(menuItemMarkup).join("")}
+            </ul>
+          </article>
+        `).join("")}
+      </div>
+    </details>
+  `;
+}
+
+function menuItemMarkup(item) {
+  const normalizedItem = typeof item === "string"
+    ? { name: item, quantity: 1 }
+    : { name: item.name, quantity: item.quantity ?? 1 };
+  return `
+    <li>
+      <span>${escapeHtml(normalizedItem.name)}</span>
+      <strong>x${formatQuantity(normalizedItem.quantity)}</strong>
+    </li>
   `;
 }
 
@@ -488,6 +571,10 @@ function clearSelection() {
   drawerContent.hidden = true;
   drawerEmpty.hidden = false;
   drawerEmpty.innerHTML = "";
+  menuSection.hidden = true;
+  menuSections.innerHTML = "";
+  choicesSection.hidden = true;
+  diningChoices.innerHTML = "";
   document.querySelectorAll(".calendar-block").forEach((button) => button.classList.remove("selected"));
 }
 
@@ -589,6 +676,25 @@ function timeRange(start, end) {
   return `${formatTime(start)} - ${formatTime(end)}`;
 }
 
+function compactTimeRange(start, end) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const startSuffix = startDate.getHours() >= 12 ? "PM" : "AM";
+  const endSuffix = endDate.getHours() >= 12 ? "PM" : "AM";
+  const startLabel = formatCompactTime(startDate, startSuffix !== endSuffix);
+  const endLabel = formatCompactTime(endDate, true);
+  return `${startLabel}-${endLabel}`;
+}
+
+function formatCompactTime(date, includeSuffix) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const hour = hours % 12 || 12;
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const minuteLabel = minutes === 0 ? "" : `:${String(minutes).padStart(2, "0")}`;
+  return `${hour}${minuteLabel}${includeSuffix ? suffix : ""}`;
+}
+
 function formatTime(iso) {
   const date = new Date(iso);
   const hours = date.getHours();
@@ -596,6 +702,11 @@ function formatTime(iso) {
   const suffix = hours >= 12 ? "PM" : "AM";
   const hour = hours % 12 || 12;
   return `${hour}:${minutes} ${suffix}`;
+}
+
+function calendarBlockTitle(block) {
+  if (block.type === "meal" && block.location) return block.location;
+  return block.title;
 }
 
 function dayFromIso(iso) {
@@ -610,26 +721,32 @@ function formatKg(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function carbonImpactText(block) {
-  const carbon = block.carbon || { estimated_co2e_kg: 0, delta_co2e_kg: 0 };
-  const delta = carbon.delta_co2e_kg || 0;
-  if (delta < 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, saving ${Math.abs(delta)} kg versus the baseline.`;
-  if (delta > 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, adding ${delta} kg versus the baseline.`;
-  return `Estimated ${carbon.estimated_co2e_kg} kg CO2e with no baseline change.`;
+function formatQuantity(value) {
+  const quantity = Number(value);
+  return Number.isInteger(quantity) ? String(quantity) : quantity.toFixed(1);
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
 }
 
 function carbonLevel(block) {
-  const delta = Number(block.carbon?.delta_co2e_kg || 0);
-  if (delta <= -0.5) return "save-strong";
-  if (delta < 0) return "save";
-  if (delta > 0.2) return "pressure";
-  return "neutral";
+  const footprint = Number(block.carbon?.estimated_co2e_kg || 0);
+  if (footprint === 0) return "zero";
+  if (footprint <= 0.3) return "low";
+  if (footprint <= 0.8) return "moderate";
+  return "high";
 }
 
-function carbonDeltaLabel(block) {
-  const delta = Number(block.carbon?.delta_co2e_kg || 0);
-  if (delta === 0) return "0 kg";
-  return `${delta > 0 ? "+" : ""}${formatKg(delta)} kg`;
+function carbonFootprintLabel(block) {
+  const footprint = Number(block.carbon?.estimated_co2e_kg || 0);
+  return `${formatKg(footprint)} kg`;
 }
 
 function delay(ms) {
@@ -648,6 +765,5 @@ ignoreMemoryBtn.addEventListener("click", ignoreMemorySuggestion);
 
 renderCalendar([]);
 renderCarbonBudget(fallbackPlanResponse.carbon_budget);
-renderSkillsTrace(fallbackPlanResponse.intent.skills_used);
 renderPlannerMetadata(fallbackPlanResponse);
 clearSelection();
