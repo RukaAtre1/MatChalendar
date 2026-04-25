@@ -1,69 +1,101 @@
-# 🍵 MatChalendar
+# MatChalendar
 
-**Local-first AI campus planner** — a calm, intelligent weekly planner for UCLA daily life.
+**Local-first AI campus planner** - a one-screen weekly planner for UCLA daily life.
 
-> 計画　持続　均衡
+MatChalendar turns a natural-language student goal into an explainable weekly calendar across class time, homework, dining, recovery, transportation, and carbon goals. The current MVP is API-ready and deterministic: no ASUS GX10, Agentverse, or OmegaClaw integration is implemented yet, but the UI and docs keep those as visible future integration points.
 
-MatChalendar is a one-screen demo of an AI planner-orchestrator that balances classes, meals, health, transportation, and carbon goals into one coherent weekly calendar. Designed around a matcha-latte washi aesthetic.
+![MatChalendar status](https://img.shields.io/badge/status-api_ready_mvp-2c4a2e?style=flat-square)
 
-![MatChalendar Screenshot](https://img.shields.io/badge/status-demo-2c4a2e?style=flat-square)
+## Quick Start
 
----
-
-## ✦ Quick Start
-
-This is a **pure static site** — no build tools, no frameworks, no dependencies.
-
-### Option 1: Just open it
-
-Double-click `index.html` in your file explorer. Done.
-
-### Option 2: Local dev server (live reload)
+Run the API and static demo with Python:
 
 ```bash
-npx -y live-server --port=3000 --open=index.html
+python backend/main.py
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
----
+You can still open `index.html` directly. In that mode, Run Planner attempts `POST http://127.0.0.1:8000/api/plan`; if the backend is unavailable, the frontend uses its local mock PlanResponse fallback.
 
-## 📁 Project Structure
+## API
 
+```text
+POST /api/plan
+GET /api/dining
+GET /api/demo-schedule
+GET /api/health
 ```
+
+Example:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/plan \
+  -H "Content-Type: application/json" \
+  -d "{\"prompt\":\"Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.\"}"
+```
+
+## Project Structure
+
+```text
 MatChalendar/
-├── index.html            # App shell (single page)
-├── styles.css            # Full design system (matcha-latte theme)
-├── app.js                # Calendar logic, planner trace, drawer interaction
-├── matcalendar-demo.html # Visual style reference (standalone landing page)
-├── PRD_MatChalendar.md   # Product requirements document
-└── README.md
+|-- index.html
+|-- styles.css
+|-- app.js
+|-- matcalendar-demo.html
+|-- PRD_MatChalendar.md
+|-- README.md
+`-- backend/
+    |-- main.py
+    |-- planner/
+    |   |-- master_planner.py
+    |   |-- intent_parser.py
+    |   |-- skill_router.py
+    |   |-- calendar_replanner.py
+    |   `-- schemas.py
+    |-- skills/
+    |   |-- calendar_skill.py
+    |   |-- dining_skill.py
+    |   |-- study_skill.py
+    |   |-- health_skill.py
+    |   |-- energy_skill.py
+    |   |-- transportation_skill.py
+    |   |-- sustainability_carbon_skill.py
+    |   `-- explanation_skill.py
+    |-- food/
+    |   |-- food_data_pipeline.py
+    |   |-- nutrition_estimator.py
+    |   |-- carbon_estimator.py
+    |   `-- food_store.py
+    `-- data/
+        |-- dining_mock.json
+        |-- sample_schedule.json
+        `-- carbon_factors.json
 ```
 
-## 🎨 Design
+## Planner Flow
 
-- **Color system**: washi · cream · matcha · muted gold
-- **Typography**: Shippori Mincho B1 + Zen Kaku Gothic Antique + Noto Serif JP
-- **Layout**: Three-panel (controls | calendar | explanation drawer), fits in one viewport
-- **Interaction**: Click any calendar block → right drawer shows reason, impact, carbon delta, scores, and skills used
+```text
+user prompt -> intent parser -> skill router -> internal skills -> calendar replanner -> PlanResponse
+```
 
-## ⚙️ How the Demo Works
+The MVP keeps the code simple for a hackathon demo. Skills return recommendations, constraints, scores, and evidence; the Master Planner owns the final calendar output.
 
-1. Enter a natural-language goal in the left panel
-2. Click **Run Planner** — a simulated planner trace animates through 7 steps
-3. Calendar populates with class, meal, study, recovery, and wind-down blocks
-4. Click any block → right drawer reveals the AI's reasoning, carbon impact, and skill attribution
+## Frontend
 
-## 🔧 Tech Stack
+The one-screen demo preserves:
 
-| Layer | Choice |
-|-------|--------|
-| Structure | Vanilla HTML |
-| Styling | Vanilla CSS (no framework) |
-| Logic | Vanilla JS (no framework) |
-| Fonts | Google Fonts (loaded via CSS) |
-| Server | Any static server or just open the file |
+- left goal input / chat-style control panel
+- right weekly calendar
+- explanation drawer
+- carbon budget card
+- skills used trace
+- local fallback PlanResponse
 
-## 📄 License
+## Integration Points
+
+- ASUS GX10: visible local-AI badge only; no local model call yet.
+- Agentverse: planned external `CampusLifePlannerSkill`; not implemented yet.
+- OmegaClaw: planned invoker; not implemented yet.
 
 Built for LA Hacks 2026.

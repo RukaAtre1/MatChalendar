@@ -3,20 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MatChalendar — local-first AI campus planner for UCLA daily life. Sustainability, balance, and intelligent weekly planning." />
-    <title>MatChalendar — Campus Life AI Planner</title>
+    <meta name="description" content="MatChalendar - local-first AI campus planner for UCLA daily life. Sustainability, balance, and intelligent weekly planning." />
+    <title>MatChalendar - Campus Life AI Planner</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <p class="mood-text">計画　持続　均衡</p>
+          <p class="mood-text">Plan. Sustain. Balance.</p>
           <h1>Mat<span class="gold">Cha</span>lendar</h1>
         </div>
         <div class="local-badge" aria-label="Local planner status">
           <span class="status-dot"></span>
-          ASUS GX10 · Local AI planner
+          ASUS GX10 integration point
         </div>
       </header>
 
@@ -26,12 +26,12 @@
             <div class="card-row">
               <div>
                 <p class="kicker">Weekly carbon budget</p>
-                <div class="carbon-number"><strong>19.4</strong><span>/ 35 kg CO₂e</span></div>
+                <div class="carbon-number"><strong id="carbonCurrent">19.4</strong><span id="carbonTarget">/ 35 kg CO2e</span></div>
               </div>
-              <span class="budget-pill">55%</span>
+              <span id="carbonPercent" class="budget-pill">55%</span>
             </div>
-            <div class="budget-meter" aria-hidden="true"><span></span></div>
-            <p class="quiet-copy">Slightly above today's pace after an emergency Uber. The planner compensates with calmer meal and route choices.</p>
+            <div class="budget-meter" aria-hidden="true"><span id="carbonMeter"></span></div>
+            <p id="carbonStatus" class="quiet-copy">Slightly above today's pace after an emergency Uber. The planner compensates with calmer meal and route choices.</p>
           </section>
 
           <form id="plannerForm" class="goal-form">
@@ -40,6 +40,11 @@
             <button class="primary-button" type="submit">Run Planner</button>
             <ol id="compactTrace" class="compact-trace" hidden></ol>
           </form>
+
+          <section class="skill-trace-card" aria-label="Skills used trace">
+            <p class="kicker">Skills used</p>
+            <div id="skillsTrace" class="skill-chips muted"></div>
+          </section>
         </aside>
 
         <section class="calendar-panel" aria-label="Weekly calendar">
@@ -59,7 +64,7 @@
           <div id="drawerContent" class="drawer-content" hidden>
             <div class="drawer-heading">
               <span id="blockType" class="type-pill"></span>
-              <button id="closeDrawer" class="close-button" type="button" aria-label="Close explanation">×</button>
+              <button id="closeDrawer" class="close-button" type="button" aria-label="Close explanation">&times;</button>
             </div>
             <h2 id="blockTitle"></h2>
             <p id="blockMeta" class="block-meta"></p>
@@ -88,6 +93,11 @@
             <section class="detail-section">
               <p class="kicker">Skills used</p>
               <div id="drawerSkills" class="skill-chips"></div>
+            </section>
+
+            <section class="detail-section">
+              <p class="kicker">Data sources</p>
+              <div id="drawerSources" class="skill-chips muted"></div>
             </section>
           </div>
         </aside>

@@ -1,0 +1,20 @@
+{
+  "fixed_events": [
+    {
+      "id": "fixed_class_mon",
+      "title": "Class block",
+      "type": "class",
+      "start": "2026-04-27T10:00:00",
+      "end": "2026-04-27T14:00:00",
+      "location": "UCLA campus"
+    }
+  ],
+  "assignments": [
+    {
+      "id": "homework_tonight",
+      "title": "Homework due soon",
+      "estimated_minutes": 90,
+      "preferred_window": "tonight"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;800&family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700&family=Noto+Serif+JP:ital,wght@0,300;0,400;1,300&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600;800&family=Zen+Kaku+Gothic+Antique:wght@300;400;500;700&family=Noto+Serif+JP:ital,wght@0,300;0,400;1,300&display=swap");
 
-/* ── DESIGN TOKENS ── */
+/* -- DESIGN TOKENS -- */
 :root {
   --ink:         #161e14;
   --matcha-d:    #2c4a2e;
@@ -25,7 +25,7 @@
   --r-sm:        12px;
 }
 
-/* ── RESET ── */
+/* -- RESET -- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
@@ -40,7 +40,7 @@ body {
   background: var(--washi);
 }
 
-/* ── GRAIN OVERLAY ── */
+/* -- GRAIN OVERLAY -- */
 body::before {
   content: '';
   position: fixed;
@@ -54,7 +54,7 @@ body::before {
 button, textarea { font: inherit; }
 button { cursor: pointer; }
 
-/* ── APP SHELL ── */
+/* -- APP SHELL -- */
 .app-shell {
   position: relative;
   z-index: 1;
@@ -63,7 +63,7 @@ button { cursor: pointer; }
   overflow: hidden;
 }
 
-/* ── TOPBAR ── */
+/* -- TOPBAR -- */
 .topbar {
   display: flex;
   align-items: flex-end;
@@ -129,7 +129,7 @@ h2 {
   text-transform: uppercase;
 }
 
-/* ── LOCAL BADGE ── */
+/* -- LOCAL BADGE -- */
 .local-badge {
   display: inline-flex;
   align-items: center;
@@ -161,7 +161,7 @@ h2 {
   50% { box-shadow: 0 0 0 7px rgba(61, 107, 64, 0.06); }
 }
 
-/* ── THREE-PANEL WORKSPACE ── */
+/* -- THREE-PANEL WORKSPACE -- */
 .workspace {
   display: grid;
   grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(260px, 310px);
@@ -172,7 +172,7 @@ h2 {
   margin: 0 auto;
 }
 
-/* ── PANEL BASE ── */
+/* -- PANEL BASE -- */
 .control-panel,
 .calendar-panel,
 .detail-drawer {
@@ -198,7 +198,7 @@ h2 {
   overflow: hidden;
 }
 
-/* ── CARBON BUDGET CARD ── */
+/* -- CARBON BUDGET CARD -- */
 .carbon-card {
   padding: 13px;
   border: 1px solid rgba(185, 154, 72, 0.22);
@@ -280,7 +280,15 @@ h2 {
   color: var(--text-mid);
 }
 
-/* ── GOAL FORM ── */
+.skill-trace-card {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+/* -- GOAL FORM -- */
 .goal-form {
   display: grid;
   gap: 8px;
@@ -315,7 +323,7 @@ textarea:focus {
   box-shadow: 0 0 0 4px rgba(90, 143, 94, 0.08);
 }
 
-/* ── BUTTONS ── */
+/* -- BUTTONS -- */
 .primary-button,
 .secondary-button,
 .close-button {
@@ -374,7 +382,7 @@ textarea:focus {
   transform: translateY(-1px);
 }
 
-/* ── COMPACT PLANNER TRACE ── */
+/* -- COMPACT PLANNER TRACE -- */
 .compact-trace {
   display: flex;
   flex-direction: column;
@@ -432,7 +440,7 @@ textarea:focus {
   background: var(--matcha-d);
 }
 
-/* ── CALENDAR PANEL ── */
+/* -- CALENDAR PANEL -- */
 .calendar-header {
   margin-bottom: 8px;
 }
@@ -520,7 +528,7 @@ textarea:focus {
   text-align: center;
 }
 
-/* ── CALENDAR BLOCKS ── */
+/* -- CALENDAR BLOCKS -- */
 .calendar-block {
   position: absolute;
   right: 4px;
@@ -568,7 +576,7 @@ textarea:focus {
   opacity: 0.8;
 }
 
-/* Block type colors — soft, muted, matcha-latte palette */
+/* Block type colors -soft, muted, matcha-latte palette */
 .block-class {
   background: rgba(61, 107, 64, 0.12);
   color: var(--matcha-d);
@@ -605,7 +613,7 @@ textarea:focus {
   border-left-color: var(--gold-l);
 }
 
-/* ── DETAIL DRAWER ── */
+/* -- DETAIL DRAWER -- */
 .drawer-empty {
   min-height: 100%;
 }
@@ -724,7 +732,7 @@ textarea:focus {
   color: #9d6542 !important;
 }
 
-/* ── SCORE BARS ── */
+/* -- SCORE BARS -- */
 .score-stack {
   display: grid;
   gap: 8px;
@@ -757,7 +765,7 @@ textarea:focus {
   transition: width 0.8s ease;
 }
 
-/* ── SKILL CHIPS ── */
+/* -- SKILL CHIPS -- */
 .skill-chips {
   display: flex;
   flex-wrap: wrap;
@@ -778,7 +786,12 @@ textarea:focus {
   letter-spacing: 0.07em;
 }
 
-/* ── RESPONSIVE ── */
+.skill-chips.muted .skill-chip {
+  background: var(--matcha-dust);
+  color: var(--matcha-d);
+}
+
+/* -- RESPONSIVE -- */
 @media (max-width: 1180px) {
   .workspace {
     grid-template-columns: 320px 1fr;

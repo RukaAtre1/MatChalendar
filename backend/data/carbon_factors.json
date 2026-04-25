@@ -1,0 +1,14 @@
+{
+  "weekly_target_kg_co2e": 35.0,
+  "transportation": {
+    "walk_kg_co2e": 0.0,
+    "bike_kg_co2e": 0.0,
+    "bus_kg_co2e": 0.3,
+    "rideshare_kg_co2e": 5.2
+  },
+  "food_baselines": {
+    "default_dinner_kg_co2e": 1.8,
+    "default_lunch_kg_co2e": 1.5,
+    "low_carbon_meal_kg_co2e": 0.7
+  }
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "bplate_dinner_001",
+    "name": "Plant-based grain bowl",
+    "dining_hall": "Bruin Plate",
+    "meal_period": "dinner",
+    "available_start": "17:00",
+    "available_end": "21:00",
+    "tags": ["vegan", "low_carbon", "high_fiber"],
+    "estimated_nutrition": {
+      "calories": 520,
+      "protein_g": 22,
+      "carbs_g": 68,
+      "fat_g": 16
+    },
+    "carbon": {
+      "estimated_co2e_kg": 0.7,
+      "carbon_category": "low",
+      "source": "ucla_mock_plus_estimator"
+    },
+    "scores": {
+      "health": 0.9,
+      "energy": 0.82,
+      "sustainability": 0.94,
+      "carbon": 0.92
+    }
+  },
+  {
+    "id": "deneve_lunch_001",
+    "name": "Lentil vegetable plate",
+    "dining_hall": "De Neve",
+    "meal_period": "lunch",
+    "available_start": "11:00",
+    "available_end": "14:00",
+    "tags": ["vegetarian", "low_carbon", "steady_energy"],
+    "estimated_nutrition": {
+      "calories": 470,
+      "protein_g": 19,
+      "carbs_g": 62,
+      "fat_g": 14
+    },
+    "carbon": {
+      "estimated_co2e_kg": 0.6,
+      "carbon_category": "low",
+      "source": "ucla_mock_plus_estimator"
+    },
+    "scores": {
+      "health": 0.88,
+      "energy": 0.85,
+      "sustainability": 0.92,
+      "carbon": 0.9
+    }
+  },
+  {
+    "id": "bplate_dinner_002",
+    "name": "Chicken rice bowl",
+    "dining_hall": "Bruin Plate",
+    "meal_period": "dinner",
+    "available_start": "17:00",
+    "available_end": "21:00",
+    "tags": ["high_protein", "medium_carbon"],
+    "estimated_nutrition": {
+      "calories": 650,
+      "protein_g": 38,
+      "carbs_g": 70,
+      "fat_g": 20
+    },
+    "carbon": {
+      "estimated_co2e_kg": 1.8,
+      "carbon_category": "medium",
+      "source": "ucla_mock_plus_estimator"
+    },
+    "scores": {
+      "health": 0.78,
+      "energy": 0.78,
+      "sustainability": 0.62,
+      "carbon": 0.58
+    }
+  }
+]
