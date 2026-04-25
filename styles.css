@@ -284,6 +284,40 @@ h2 {
   color: var(--text-mid);
 }
 
+.memory-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(90, 143, 94, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.memory-card h3 {
+  margin: 0;
+  color: var(--matcha-d);
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.memory-patch {
+  max-height: 90px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--matcha-dust);
+  color: var(--text-mid);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.memory-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* -- GOAL FORM -- */
 .goal-form {
   display: grid;
@@ -358,6 +392,22 @@ textarea:focus {
 .secondary-button:hover {
   background: var(--matcha-dust);
   transform: translateY(-1px);
+}
+
+.ghost-button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ghost-button:hover {
+  background: rgba(222, 234, 223, 0.45);
+  color: var(--matcha-d);
 }
 
 .close-button {
@@ -455,6 +505,13 @@ textarea:focus {
   font-size: 12px;
   color: var(--text-mid);
   line-height: 1.5;
+}
+
+.planner-meta {
+  margin-top: 3px;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .calendar-grid {

@@ -14,7 +14,7 @@
           <p class="mood-text">Sustain the Spark</p>
           <h1>Mat<span class="gold">Cha</span>lendar</h1>
         </div>
-        <div class="local-badge" aria-label="Local planner status">
+        <div id="plannerBadge" class="local-badge" aria-label="Planner status">
           <span class="status-dot"></span>
           Local AI climate planner
         </div>
@@ -40,6 +40,17 @@
             <button class="primary-button" type="submit">Run Planner</button>
             <ol id="compactTrace" class="compact-trace" hidden></ol>
           </form>
+
+          <section id="memoryCard" class="memory-card" aria-label="Memory update suggestion" hidden>
+            <p class="kicker">Memory</p>
+            <h3>Remember this preference?</h3>
+            <p id="memoryReason" class="quiet-copy"></p>
+            <div id="memoryPatch" class="memory-patch"></div>
+            <div class="memory-actions">
+              <button id="saveMemoryBtn" class="secondary-button" type="button">Save</button>
+              <button id="ignoreMemoryBtn" class="ghost-button" type="button">Ignore</button>
+            </div>
+          </section>
         </aside>
 
         <section class="calendar-panel" aria-label="Weekly calendar">
@@ -47,6 +58,7 @@
             <div>
               <p class="kicker">Low-carbon weekly plan</p>
               <h2 id="planSummary">Run the planner to build the week.</h2>
+              <p id="plannerMeta" class="planner-meta">PlannerProvider waiting for a goal.</p>
             </div>
             <button id="regenerateBtn" class="secondary-button" type="button">Replan</button>
           </div>
