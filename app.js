@@ -185,11 +185,63 @@ const fallbackPlanResponse = {
       carbon: { estimated_co2e_kg: 0.02, baseline_co2e_kg: 0.02, delta_co2e_kg: 0, category: "health" },
       skills_used: ["health", "energy", "calendar"],
       data_sources: ["local_planner"]
+    },
+    {
+      id: "block_market_fri",
+      title: "Low-waste grocery loop",
+      type: "commute",
+      start: "2026-05-01T17:15:00",
+      end: "2026-05-01T18:00:00",
+      location: "Westwood Village",
+      reason: "A walkable grocery stop avoids a short ride-share trip and sets up lower-waste weekend meals.",
+      scores: { time: 0.82, health: 0.78, energy: 0.74, sustainability: 0.93, carbon: 0.91 },
+      carbon: { estimated_co2e_kg: 0, baseline_co2e_kg: 0.8, delta_co2e_kg: -0.8, category: "transportation" },
+      skills_used: ["transportation", "sustainability_carbon", "dining", "calendar"],
+      data_sources: ["carbon_factors", "local_planner"]
+    },
+    {
+      id: "block_dinner_fri",
+      title: "Plant-forward dinner",
+      type: "meal",
+      start: "2026-05-01T18:30:00",
+      end: "2026-05-01T19:15:00",
+      location: "Dorm kitchen",
+      reason: "Dinner uses the grocery stop to keep the meal low-carbon and reduce packaging waste before the weekend.",
+      scores: { time: 0.8, health: 0.86, energy: 0.82, sustainability: 0.95, carbon: 0.93 },
+      carbon: { estimated_co2e_kg: 0.5, baseline_co2e_kg: 1.7, delta_co2e_kg: -1.2, category: "dining" },
+      skills_used: ["dining", "health", "energy", "sustainability_carbon"],
+      data_sources: ["carbon_factors", "local_planner"]
+    },
+    {
+      id: "block_bike_sat",
+      title: "Bike study trip",
+      type: "study",
+      start: "2026-05-02T10:30:00",
+      end: "2026-05-02T12:00:00",
+      location: "Study cafe",
+      reason: "A weekend study block is paired with biking instead of a car trip, keeping academic progress and carbon goals aligned.",
+      scores: { time: 0.83, health: 0.8, energy: 0.84, sustainability: 0.9, carbon: 0.92 },
+      carbon: { estimated_co2e_kg: 0.05, baseline_co2e_kg: 0.7, delta_co2e_kg: -0.65, category: "transportation" },
+      skills_used: ["study", "transportation", "energy", "sustainability_carbon"],
+      data_sources: ["carbon_factors", "user_schedule"]
+    },
+    {
+      id: "block_meal_prep_sun",
+      title: "Low-waste meal prep",
+      type: "meal",
+      start: "2026-05-03T17:00:00",
+      end: "2026-05-03T18:15:00",
+      location: "Dorm kitchen",
+      reason: "Sunday meal prep turns leftover groceries into weekday meals, reducing food waste and lowering next week's dining impact.",
+      scores: { time: 0.78, health: 0.88, energy: 0.82, sustainability: 0.96, carbon: 0.94 },
+      carbon: { estimated_co2e_kg: 0.4, baseline_co2e_kg: 1.6, delta_co2e_kg: -1.2, category: "dining" },
+      skills_used: ["dining", "health", "energy", "sustainability_carbon", "calendar"],
+      data_sources: ["carbon_factors", "local_planner"]
     }
   ]
 };
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const startHour = 8;
 const endHour = 24;
 const headerHeight = 32;
@@ -197,9 +249,11 @@ const hourHeight = 36;
 
 const form = document.querySelector("#plannerForm");
 const trace = document.querySelector("#compactTrace");
+const workspace = document.querySelector(".workspace");
 const calendarGrid = document.querySelector("#calendarGrid");
 const planSummary = document.querySelector("#planSummary");
 const regenerateBtn = document.querySelector("#regenerateBtn");
+const detailDrawer = document.querySelector(".detail-drawer");
 const drawerEmpty = document.querySelector("#drawerEmpty");
 const drawerContent = document.querySelector("#drawerContent");
 const closeDrawer = document.querySelector("#closeDrawer");
@@ -266,11 +320,18 @@ function renderCalendar(blocks) {
       .forEach((block) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `calendar-block block-${block.type}`;
+        const sustainLevel = carbonLevel(block);
+        button.className = `calendar-block block-${block.type} sustain-${sustainLevel}`;
         button.dataset.blockId = block.id;
         button.style.top = `${headerHeight + minutesFromStart(block.start)}px`;
         button.style.height = `${Math.max(38, durationMinutes(block.start, block.end) * (hourHeight / 60))}px`;
-        button.innerHTML = `<strong>${block.title}</strong><small>${timeRange(block.start, block.end)} | ${block.location}</small>`;
+        button.innerHTML = `
+          <strong>${block.title}</strong>
+          <small>
+            <span>${timeRange(block.start, block.end)} | ${block.location}</span>
+            <span class="carbon-mini-pill">${carbonDeltaLabel(block)}</span>
+          </small>
+        `;
         button.addEventListener("click", () => selectBlock(block.id));
         column.appendChild(button);
       });
@@ -377,6 +438,8 @@ function selectBlock(blockId) {
     button.classList.toggle("selected", button.dataset.blockId === blockId);
   });
 
+  workspace.classList.add("drawer-open");
+  detailDrawer.hidden = false;
   drawerEmpty.hidden = true;
   drawerContent.hidden = false;
 
@@ -418,12 +481,11 @@ function scoreRow(key, value) {
 
 function clearSelection() {
   selectedBlock = null;
+  workspace.classList.remove("drawer-open");
+  detailDrawer.hidden = true;
   drawerContent.hidden = true;
   drawerEmpty.hidden = false;
-  drawerEmpty.innerHTML = `
-    <h2>Plan details</h2>
-    <p>Block explanations, scores, carbon impact, skills, and sources appear here.</p>
-  `;
+  drawerEmpty.innerHTML = "";
   document.querySelectorAll(".calendar-block").forEach((button) => button.classList.remove("selected"));
 }
 
@@ -540,6 +602,20 @@ function carbonImpactText(block) {
   if (delta < 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, saving ${Math.abs(delta)} kg versus the baseline.`;
   if (delta > 0) return `Estimated ${carbon.estimated_co2e_kg} kg CO2e, adding ${delta} kg versus the baseline.`;
   return `Estimated ${carbon.estimated_co2e_kg} kg CO2e with no baseline change.`;
+}
+
+function carbonLevel(block) {
+  const delta = Number(block.carbon?.delta_co2e_kg || 0);
+  if (delta <= -0.5) return "save-strong";
+  if (delta < 0) return "save";
+  if (delta > 0.2) return "pressure";
+  return "neutral";
+}
+
+function carbonDeltaLabel(block) {
+  const delta = Number(block.carbon?.delta_co2e_kg || 0);
+  if (delta === 0) return "0 kg";
+  return `${delta > 0 ? "+" : ""}${formatKg(delta)} kg`;
 }
 
 function delay(ms) {

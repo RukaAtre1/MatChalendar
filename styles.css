@@ -161,15 +161,19 @@ h2 {
   50% { box-shadow: 0 0 0 7px rgba(61, 107, 64, 0.06); }
 }
 
-/* -- THREE-PANEL WORKSPACE -- */
+/* -- WORKSPACE -- */
 .workspace {
   display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(260px, 310px);
+  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr);
   gap: 12px;
   max-width: 1640px;
   height: calc(100vh - 80px);
   min-height: 0;
   margin: 0 auto;
+}
+
+.workspace.drawer-open {
+  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(260px, 310px);
 }
 
 /* -- PANEL BASE -- */
@@ -520,7 +524,7 @@ textarea:focus {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: 46px repeat(5, minmax(80px, 1fr));
+  grid-template-columns: 46px repeat(7, minmax(72px, 1fr));
   min-height: 0;
   height: 100%;
   overflow: hidden;
@@ -601,6 +605,7 @@ textarea:focus {
   overflow: hidden;
   cursor: pointer;
   border-left: 3px solid transparent;
+  color: var(--text-mid);
 }
 
 .calendar-block:hover,
@@ -615,8 +620,9 @@ textarea:focus {
 }
 
 .calendar-block strong,
-.calendar-block small {
+.calendar-block small span:first-child {
   position: relative;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -625,49 +631,92 @@ textarea:focus {
 .calendar-block strong {
   font-size: 10px;
   line-height: 1.15;
+  color: var(--text);
 }
 
 .calendar-block small {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
   margin-top: 2px;
   font-size: 8.5px;
   opacity: 0.8;
 }
 
+.carbon-mini-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-height: 14px;
+  padding: 0 4px;
+  border-radius: 99px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 /* Block type colors -soft, muted, matcha-latte palette */
 .block-class {
   background: rgba(61, 107, 64, 0.12);
-  color: var(--matcha-d);
-  border-left-color: var(--matcha-d);
 }
 
 .block-meal {
   background: rgba(160, 120, 48, 0.12);
-  color: var(--gold);
-  border-left-color: var(--gold);
 }
 
 .block-study {
   background: rgba(90, 143, 94, 0.14);
-  color: var(--matcha-m);
-  border-left-color: var(--matcha-m);
 }
 
 .block-recovery {
   background: rgba(139, 184, 142, 0.18);
-  color: #3a6b40;
-  border-left-color: var(--matcha-l);
 }
 
 .block-rest {
   background: rgba(191, 216, 193, 0.25);
-  color: var(--text-mid);
-  border-left-color: var(--matcha-ll);
 }
 
 .block-commute {
   background: rgba(160, 120, 48, 0.1);
-  color: #8a6b2c;
-  border-left-color: var(--gold-l);
+}
+
+/* Carbon impact colors. Event type sets the soft fill; carbon delta sets the signal. */
+.sustain-save-strong {
+  border-left-color: var(--matcha-d);
+  box-shadow: inset 0 0 0 1px rgba(44, 74, 46, 0.08);
+}
+
+.sustain-save-strong .carbon-mini-pill {
+  background: var(--matcha-d);
+  color: var(--cream);
+}
+
+.sustain-save {
+  border-left-color: var(--matcha-m);
+}
+
+.sustain-save .carbon-mini-pill {
+  background: var(--matcha-dust);
+  color: var(--matcha-d);
+}
+
+.sustain-neutral {
+  border-left-color: var(--matcha-ll);
+}
+
+.sustain-neutral .carbon-mini-pill {
+  background: rgba(191, 216, 193, 0.45);
+  color: var(--text-mid);
+}
+
+.sustain-pressure {
+  border-left-color: var(--gold);
+}
+
+.sustain-pressure .carbon-mini-pill {
+  background: var(--gold-soft);
+  color: #725628;
 }
 
 /* -- DETAIL DRAWER -- */
@@ -855,6 +904,10 @@ textarea:focus {
     height: auto;
   }
 
+  .workspace.drawer-open {
+    grid-template-columns: 320px 1fr;
+  }
+
   .detail-drawer {
     grid-column: 1 / -1;
     min-height: 330px;
@@ -882,6 +935,6 @@ textarea:focus {
   }
 
   .calendar-grid {
-    min-width: 680px;
+    min-width: 860px;
   }
 }
