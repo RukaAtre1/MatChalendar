@@ -174,7 +174,7 @@ const fallbackPlanResponse = {
   ]
 };
 
-const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const startHour = 8;
 const endHour = 24;
 const headerHeight = 32;

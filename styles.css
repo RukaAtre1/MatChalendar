@@ -467,7 +467,7 @@ textarea:focus {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: 46px repeat(5, minmax(80px, 1fr));
+  grid-template-columns: 46px repeat(7, minmax(72px, 1fr));
   min-height: 0;
   height: 100%;
   overflow: hidden;
@@ -878,6 +878,6 @@ textarea:focus {
   }
 
   .calendar-grid {
-    min-width: 680px;
+    min-width: 860px;
   }
 }
