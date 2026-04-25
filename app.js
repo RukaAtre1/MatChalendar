@@ -51,11 +51,11 @@ const fallbackPlanResponse = {
   plan_blocks: [
     {
       id: "block_class_mon",
-      title: "Class block",
+      title: "PHYSCI 5",
       type: "class",
       start: "2026-04-27T10:00:00",
       end: "2026-04-27T14:00:00",
-      location: "UCLA campus",
+      location: "Boelter Hall",
       reason: "This fixed class block is protected before meals, recovery, and study work are placed around it.",
       scores: { time: 0.98, health: 0.66, energy: 0.7, sustainability: 0.72, carbon: 0.84 },
       carbon: { estimated_co2e_kg: 0.1, category: "calendar" },
@@ -64,7 +64,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_walk_mon",
-      title: "Recovery walk",
+      title: "Walk break",
       type: "recovery",
       start: "2026-04-27T14:15:00",
       end: "2026-04-27T14:45:00",
@@ -77,7 +77,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_dinner_mon",
-      title: "Low-carbon dinner at Bruin Plate",
+      title: "Bruin Plate",
       type: "meal",
       start: "2026-04-27T18:30:00",
       end: "2026-04-27T19:15:00",
@@ -112,7 +112,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_study_mon",
-      title: "Homework deep work",
+      title: "Math homework",
       type: "study",
       start: "2026-04-27T19:45:00",
       end: "2026-04-27T21:15:00",
@@ -125,7 +125,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_winddown_mon",
-      title: "Sleep wind-down",
+      title: "Wind-down",
       type: "rest",
       start: "2026-04-27T22:30:00",
       end: "2026-04-27T23:00:00",
@@ -138,7 +138,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_transit_tue",
-      title: "Transit-first commute",
+      title: "Big Blue Bus",
       type: "commute",
       start: "2026-04-28T09:20:00",
       end: "2026-04-28T09:50:00",
@@ -151,7 +151,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_lunch_tue",
-      title: "Plant-forward lunch",
+      title: "De Neve",
       type: "meal",
       start: "2026-04-28T12:00:00",
       end: "2026-04-28T12:45:00",
@@ -186,11 +186,11 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_review_wed",
-      title: "Review sprint",
+      title: "CS review",
       type: "study",
       start: "2026-04-29T15:00:00",
       end: "2026-04-29T16:15:00",
-      location: "Study commons",
+      location: "Study Commons",
       reason: "A midweek review prevents Monday night from becoming the only academic catch-up slot.",
       scores: { time: 0.84, health: 0.7, energy: 0.79, sustainability: 0.76, carbon: 0.86 },
       carbon: { estimated_co2e_kg: 0.05, category: "study" },
@@ -199,7 +199,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_workout_thu",
-      title: "Light workout",
+      title: "Wooden workout",
       type: "recovery",
       start: "2026-04-30T16:00:00",
       end: "2026-04-30T17:00:00",
@@ -212,7 +212,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_market_fri",
-      title: "Low-waste grocery loop",
+      title: "Westwood grocery",
       type: "commute",
       start: "2026-05-01T17:15:00",
       end: "2026-05-01T18:00:00",
@@ -225,7 +225,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_dinner_fri",
-      title: "Plant-forward dinner",
+      title: "Dorm dinner",
       type: "meal",
       start: "2026-05-01T18:30:00",
       end: "2026-05-01T19:15:00",
@@ -238,7 +238,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_bike_sat",
-      title: "Bike study trip",
+      title: "Study cafe",
       type: "study",
       start: "2026-05-02T10:30:00",
       end: "2026-05-02T12:00:00",
@@ -251,7 +251,7 @@ const fallbackPlanResponse = {
     },
     {
       id: "block_meal_prep_sun",
-      title: "Low-waste meal prep",
+      title: "Meal prep",
       type: "meal",
       start: "2026-05-03T17:00:00",
       end: "2026-05-03T18:15:00",
@@ -353,11 +353,14 @@ function renderCalendar(blocks) {
         button.style.top = `${headerHeight + minutesFromStart(block.start)}px`;
         button.style.height = `${Math.max(38, durationMinutes(block.start, block.end) * (hourHeight / 60))}px`;
         button.innerHTML = `
-          <strong>${block.title}</strong>
-          <small>
-            <span>${timeRange(block.start, block.end)} | ${block.location}</span>
+          <span class="block-top">
+            <strong>${calendarBlockTitle(block)}</strong>
+            <time>${compactTimeRange(block.start, block.end)}</time>
+          </span>
+          <span class="block-bottom">
+            <span>${block.location}</span>
             <span class="carbon-mini-pill">${carbonFootprintLabel(block)}</span>
-          </small>
+          </span>
         `;
         button.addEventListener("click", () => selectBlock(block.id));
         column.appendChild(button);
@@ -639,6 +642,25 @@ function timeRange(start, end) {
   return `${formatTime(start)} - ${formatTime(end)}`;
 }
 
+function compactTimeRange(start, end) {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const startSuffix = startDate.getHours() >= 12 ? "PM" : "AM";
+  const endSuffix = endDate.getHours() >= 12 ? "PM" : "AM";
+  const startLabel = formatCompactTime(startDate, startSuffix !== endSuffix);
+  const endLabel = formatCompactTime(endDate, true);
+  return `${startLabel}-${endLabel}`;
+}
+
+function formatCompactTime(date, includeSuffix) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const hour = hours % 12 || 12;
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const minuteLabel = minutes === 0 ? "" : `:${String(minutes).padStart(2, "0")}`;
+  return `${hour}${minuteLabel}${includeSuffix ? suffix : ""}`;
+}
+
 function formatTime(iso) {
   const date = new Date(iso);
   const hours = date.getHours();
@@ -646,6 +668,11 @@ function formatTime(iso) {
   const suffix = hours >= 12 ? "PM" : "AM";
   const hour = hours % 12 || 12;
   return `${hour}:${minutes} ${suffix}`;
+}
+
+function calendarBlockTitle(block) {
+  if (block.type === "meal" && block.location) return block.location;
+  return block.title;
 }
 
 function dayFromIso(iso) {
