@@ -8,13 +8,60 @@ PLANNER_CONTRACT_KEYS = {
     "tradeoffs",
     "calendar_strategy",
     "memory_update_suggestion",
+    "ai_planner_context",
+    "confidence",
+    "explanation_draft",
 }
 
 
 def build_master_planner_contract(prompt, soul="", memory="", ai_response=None):
     if isinstance(ai_response, dict):
+        if _is_ai_planner_context(ai_response):
+            return planner_contract_from_ai_context(ai_response, prompt, soul=soul, memory=memory)
         return normalize_planner_contract(ai_response, prompt)
     return heuristic_planner_contract(prompt, soul=soul, memory=memory)
+
+
+def planner_contract_from_ai_context(context, prompt="", soul="", memory=""):
+    fallback = heuristic_planner_contract(prompt, soul=soul, memory=memory)
+    goals = _string_list(context.get("goals")) or fallback["understanding"]["goals"]
+    constraints = _string_list(context.get("constraints")) or fallback["understanding"]["constraints"]
+    priority_order = _string_list(context.get("priority_order")) or fallback["understanding"]["priority_order"]
+    selected_skills = _valid_skills(context.get("selected_skills")) or [call["skill"] for call in fallback["skill_calls"]]
+    explanation_draft = str(context.get("explanation_draft", "")).strip()
+
+    skill_calls = [
+        {
+            "skill": skill,
+            "reason": _skill_reason(skill, goals, constraints),
+            "query": prompt or "Plan campus life week.",
+        }
+        for skill in selected_skills
+    ]
+
+    return {
+        "understanding": {
+            "goals": goals,
+            "constraints": constraints,
+            "priority_order": priority_order,
+            "planning_scope": parse_intent(prompt).get("planning_scope", "today"),
+        },
+        "skill_calls": skill_calls,
+        "tradeoffs": _string_list(context.get("tradeoffs")) or fallback["tradeoffs"],
+        "calendar_strategy": explanation_draft or _calendar_strategy(constraints, goals, bool(soul), bool(memory)),
+        "memory_update_suggestion": _memory_suggestion(prompt),
+        "ai_planner_context": {
+            "goals": goals,
+            "constraints": constraints,
+            "priority_order": priority_order,
+            "selected_skills": selected_skills,
+            "tradeoffs": _string_list(context.get("tradeoffs")),
+            "explanation_draft": explanation_draft,
+            "confidence": _confidence(context.get("confidence")),
+        },
+        "confidence": _confidence(context.get("confidence")),
+        "explanation_draft": explanation_draft,
+    }
 
 
 def heuristic_planner_contract(prompt, soul="", memory=""):
@@ -60,6 +107,12 @@ def normalize_planner_contract(contract, prompt=""):
         normalized["calendar_strategy"] = fallback["calendar_strategy"]
     if not isinstance(normalized.get("memory_update_suggestion"), dict):
         normalized["memory_update_suggestion"] = fallback["memory_update_suggestion"]
+    if not isinstance(normalized.get("ai_planner_context"), dict):
+        normalized["ai_planner_context"] = {}
+    if not isinstance(normalized.get("confidence"), (int, float)):
+        normalized["confidence"] = normalized["ai_planner_context"].get("confidence", 0.0)
+    if not isinstance(normalized.get("explanation_draft"), str):
+        normalized["explanation_draft"] = normalized["ai_planner_context"].get("explanation_draft", "")
 
     normalized["skill_calls"] = [
         {
@@ -74,6 +127,36 @@ def normalize_planner_contract(contract, prompt=""):
         normalized["skill_calls"] = fallback["skill_calls"]
 
     return normalized
+
+
+def _is_ai_planner_context(value):
+    return all(key in value for key in ("goals", "constraints", "priority_order", "selected_skills", "tradeoffs", "explanation_draft", "confidence"))
+
+
+def _string_list(value):
+    if not isinstance(value, list):
+        return []
+    return [str(item).strip() for item in value if str(item).strip()]
+
+
+def _valid_skills(value):
+    allowed = {
+        "calendar",
+        "dining",
+        "study",
+        "health",
+        "energy",
+        "transportation",
+        "sustainability_carbon",
+        "explanation",
+    }
+    return [skill for skill in _string_list(value) if skill in allowed]
+
+
+def _confidence(value):
+    if not isinstance(value, (int, float)):
+        return 0.0
+    return max(0.0, min(1.0, float(value)))
 
 
 def _skill_reason(skill, goals, constraints):
@@ -134,4 +217,3 @@ def _memory_suggestion(prompt):
         "reason": "",
         "markdown_patch": "",
     }
-

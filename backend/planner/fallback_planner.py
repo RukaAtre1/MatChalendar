@@ -27,6 +27,7 @@ def build_fallback_plan(prompt, planner_context=None):
     planner_context = planner_context or {}
     ai_contract = planner_context.get("ai_contract") or {}
     intent = parse_intent(prompt)
+    intent["raw_prompt"] = prompt or ""
 
     if ai_contract.get("understanding"):
         intent["understanding"] = ai_contract["understanding"]
@@ -54,6 +55,9 @@ def build_fallback_plan(prompt, planner_context=None):
             "calendar_strategy",
             "Protect fixed events, place recovery and meals around them, then add study and low-carbon choices.",
         ),
+        "ai_planner_context": ai_contract.get("ai_planner_context", {}),
+        "explanation_draft": ai_contract.get("explanation_draft", ""),
+        "confidence": ai_contract.get("confidence", 0.0),
         "memory_update_suggestion": ai_contract.get("memory_update_suggestion") or _default_memory_suggestion(),
         "integration_points": {
             "asus_gx10": "planner_provider_adapter",
@@ -148,4 +152,3 @@ def _dedupe(values):
         if value not in result:
             result.append(value)
     return result
-

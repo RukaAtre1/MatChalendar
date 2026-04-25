@@ -1,3 +1,4 @@
+from config import load_local_env
 from integrations.asi_one import ASIOneClient
 from integrations.local_ai import LocalAIClient
 from memory.memory_store import read_memory, read_soul
@@ -8,6 +9,7 @@ from planner.schemas import validate_plan_response
 
 class PlannerProvider:
     def __init__(self, local_ai=None, asi_one=None):
+        load_local_env()
         self.local_ai = local_ai or LocalAIClient()
         self.asi_one = asi_one or ASIOneClient()
 
@@ -47,27 +49,9 @@ class PlannerProvider:
         return fallback
 
     def _choose_planner_source(self, prompt, soul, memory):
-        local_configured = self.local_ai.is_available()
         asi_configured = self.asi_one.is_available()
-        local_available = False
         asi_available = False
-
-        if local_configured:
-            result = self.local_ai.build_planner_contract(prompt, soul=soul, memory=memory)
-            if result.get("available") and result.get("contract"):
-                local_available = True
-                return {
-                    "generated_by": "gx10_local_ai_assisted_planner",
-                    "planner_mode": "gx10_local_ai",
-                    "integrations_used": ["gx10_local_ai"],
-                    "fallback_reason": "",
-                    "local_ai_available": True,
-                    "asi_one_available": asi_configured,
-                    "contract": build_master_planner_contract(prompt, soul=soul, memory=memory, ai_response=result["contract"]),
-                }
-            local_error = result.get("error", "GX10 local AI unavailable.")
-        else:
-            local_error = "GX10 local AI disabled or unconfigured."
+        local_configured = self.local_ai.is_available()
 
         if asi_configured:
             result = self.asi_one.build_planner_contract(prompt, soul=soul, memory=memory)
@@ -78,7 +62,7 @@ class PlannerProvider:
                     "planner_mode": "asi_one_hosted_ai",
                     "integrations_used": ["asi_one"],
                     "fallback_reason": "",
-                    "local_ai_available": local_available,
+                    "local_ai_available": False,
                     "asi_one_available": True,
                     "contract": build_master_planner_contract(prompt, soul=soul, memory=memory, ai_response=result["contract"]),
                 }
@@ -90,8 +74,9 @@ class PlannerProvider:
             "generated_by": "deterministic_fallback_planner",
             "planner_mode": "deterministic_fallback",
             "integrations_used": ["deterministic_fallback"],
-            "fallback_reason": f"{local_error} {asi_error}",
-            "local_ai_available": local_available,
+            "fallback_reason": f"{asi_error} GX10 local AI kept optional and disabled for this ASI:One-first flow.",
+            "local_ai_available": False,
+            "local_ai_configured": local_configured,
             "asi_one_available": asi_available,
             "contract": None,
         }
@@ -103,6 +88,7 @@ class PlannerProvider:
             "integrations_used": source.get("integrations_used", []),
             "fallback_reason": source.get("fallback_reason", ""),
             "local_ai_available": bool(source.get("local_ai_available")),
+            "local_ai_configured": bool(source.get("local_ai_configured")),
             "asi_one_available": bool(source.get("asi_one_available")),
             "memory_used": bool(memory),
             "soul_used": bool(soul),

@@ -8,6 +8,7 @@ BACKEND_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BACKEND_DIR.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
+from config import load_local_env
 from food.food_store import load_dining_data
 from memory.memory_store import append_memory_update, read_memory
 from planner.planner_provider import PlannerProvider
@@ -15,6 +16,7 @@ from planner.planner_provider import PlannerProvider
 
 HOST = "127.0.0.1"
 PORT = 8000
+load_local_env()
 PLANNER_PROVIDER = PlannerProvider()
 
 

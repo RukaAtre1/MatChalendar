@@ -8,6 +8,8 @@ const plannerSteps = [
   "Rendering PlanResponse"
 ];
 
+const plannerRequestTimeoutMs = 30000;
+
 const skillLabels = {
   calendar: "Calendar",
   transportation: "Transportation",
@@ -495,7 +497,14 @@ async function runPlanner() {
   planSummary.textContent = "Planning in progress...";
   renderTrace(0);
 
-  const planPromise = requestPlan(promptInput.value).catch(() => fallbackPlanResponse);
+  const planPromise = requestPlan(promptInput.value).catch((error) => ({
+    ...fallbackPlanResponse,
+    summary: `Backend planner unavailable, showing local fallback. ${error.message}`,
+    metadata: {
+      ...fallbackPlanResponse.metadata,
+      fallback_reason: error.message || "Backend unavailable."
+    }
+  }));
 
   for (let index = 0; index < plannerSteps.length; index += 1) {
     renderTrace(index);
@@ -509,7 +518,7 @@ async function runPlanner() {
 
 async function requestPlan(prompt) {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 1800);
+  const timeout = window.setTimeout(() => controller.abort(), plannerRequestTimeoutMs);
   const apiUrl = window.MATCHALENDAR_API_URL || "http://127.0.0.1:8000/api/plan";
 
   try {
@@ -522,6 +531,11 @@ async function requestPlan(prompt) {
 
     if (!response.ok) throw new Error(`Planner API returned ${response.status}`);
     return await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error(`Planner API timed out after ${Math.round(plannerRequestTimeoutMs / 1000)} seconds.`);
+    }
+    throw error;
   } finally {
     window.clearTimeout(timeout);
   }

@@ -16,3 +16,9 @@ package-lock.json
 
 # Misc
 *.log
+
+# Local secrets
+.env
+.env.local
+.env.*
+!.env.example

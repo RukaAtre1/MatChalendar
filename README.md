@@ -2,7 +2,7 @@
 
 **Local-first AI campus planner** - a one-screen weekly planner for UCLA daily life.
 
-MatChalendar turns a natural-language student goal into an explainable weekly calendar across class time, homework, dining, recovery, transportation, and carbon goals. The current MVP keeps a deterministic demo path, but now routes planning through a provider layer that can use GX10 local AI, ASI:One hosted AI, or deterministic fallback.
+MatChalendar turns a natural-language student goal into an explainable weekly calendar across class time, homework, dining, recovery, transportation, and carbon goals. The current MVP keeps a deterministic demo path, but now routes planning through a provider layer that uses ASI:One hosted AI first and falls back safely when AI is unavailable.
 
 ![MatChalendar status](https://img.shields.io/badge/status-api_ready_mvp-2c4a2e?style=flat-square)
 
@@ -92,31 +92,44 @@ MatChalendar/
 ## Planner Flow
 
 ```text
-user prompt -> PlannerProvider -> GX10 local AI or ASI:One planner contract -> internal skills -> calendar replanner validation -> PlanResponse
+user prompt -> PlannerProvider -> ASI:One AIPlannerContext -> internal skills -> calendar replanner validation -> PlanResponse
 ```
 
-If GX10 and ASI:One are disabled or unavailable, the provider safely falls back to `fallback_planner.py`. Skills return recommendations, constraints, scores, and evidence; the planner pipeline owns the final calendar output.
+If ASI:One is disabled or unavailable, the provider safely falls back to `fallback_planner.py`. Skills return recommendations, constraints, scores, and evidence; the planner pipeline owns the final calendar output. GX10 local AI remains an optional future provider and is disabled by default until a concrete model endpoint exists.
 
 ## AI and Memory
 
 Planner source order:
 
 ```text
-GX10 local AI -> ASI:One hosted AI -> deterministic fallback
+ASI:One hosted AI -> deterministic fallback
 ```
 
 Environment variables:
 
 ```text
-USE_LOCAL_AI=false
-LOCAL_AI_BASE_URL=
-LOCAL_MODEL_NAME=
-FALLBACK_TO_MOCK=true
-
-USE_ASI_ONE=false
+USE_ASI_ONE=true
 ASI_ONE_API_KEY=
-ASI_ONE_BASE_URL=
-ASI_ONE_MODEL=
+ASI_ONE_BASE_URL=https://api.asi1.ai/v1
+ASI_ONE_MODEL=asi1
+ASI_ONE_TIMEOUT_SECONDS=20
+
+USE_LOCAL_AI=false
+LOCAL_AI_PROVIDER=openai_compatible
+LOCAL_AI_BASE_URL=
+LOCAL_AI_API_KEY=
+LOCAL_MODEL_NAME=
+LOCAL_AI_TIMEOUT_SECONDS=20
+```
+
+For local setup, copy `.env.example` to `.env.local`, fill in your ASI:One key, and run `python backend/main.py`. `.env.local` is ignored by git and must not be committed. In PowerShell, you can also set session variables directly:
+
+```powershell
+$env:USE_ASI_ONE="true"
+$env:ASI_ONE_API_KEY="<your-key>"
+$env:ASI_ONE_BASE_URL="https://api.asi1.ai/v1"
+$env:ASI_ONE_MODEL="asi1"
+$env:ASI_ONE_TIMEOUT_SECONDS="20"
 ```
 
 `SOUL.md` defines MatChalendar's product identity. `MEMORY.md` stores approved long-term preferences. `/api/plan` includes both in AI planner context and returns a `memory_update_suggestion` when useful. The frontend can save approved suggestions through `/api/memory/update`.
@@ -136,8 +149,8 @@ The one-screen demo preserves:
 
 ## Integration Points
 
-- ASUS GX10: `backend/integrations/local_ai.py` OpenAI-compatible local adapter.
 - ASI:One: `backend/integrations/asi_one.py` hosted planner reasoning adapter.
+- ASUS GX10: `backend/integrations/local_ai.py` OpenAI-compatible adapter, disabled until configured.
 - Agentverse: `CampusLifePlannerAgent` wrapper calls `PlannerProvider.plan()`.
 - OmegaClaw: `CampusLifePlannerSkill` exposes MatChalendar as one high-level skill.
 
