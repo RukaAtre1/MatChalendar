@@ -170,6 +170,58 @@ const fallbackPlanResponse = {
       carbon: { estimated_co2e_kg: 0.02, baseline_co2e_kg: 0.02, delta_co2e_kg: 0, category: "health" },
       skills_used: ["health", "energy", "calendar"],
       data_sources: ["local_planner"]
+    },
+    {
+      id: "block_market_fri",
+      title: "Low-waste grocery loop",
+      type: "commute",
+      start: "2026-05-01T17:15:00",
+      end: "2026-05-01T18:00:00",
+      location: "Westwood Village",
+      reason: "A walkable grocery stop avoids a short ride-share trip and sets up lower-waste weekend meals.",
+      scores: { time: 0.82, health: 0.78, energy: 0.74, sustainability: 0.93, carbon: 0.91 },
+      carbon: { estimated_co2e_kg: 0, baseline_co2e_kg: 0.8, delta_co2e_kg: -0.8, category: "transportation" },
+      skills_used: ["transportation", "sustainability_carbon", "dining", "calendar"],
+      data_sources: ["carbon_factors", "local_planner"]
+    },
+    {
+      id: "block_dinner_fri",
+      title: "Plant-forward dinner",
+      type: "meal",
+      start: "2026-05-01T18:30:00",
+      end: "2026-05-01T19:15:00",
+      location: "Dorm kitchen",
+      reason: "Dinner uses the grocery stop to keep the meal low-carbon and reduce packaging waste before the weekend.",
+      scores: { time: 0.8, health: 0.86, energy: 0.82, sustainability: 0.95, carbon: 0.93 },
+      carbon: { estimated_co2e_kg: 0.5, baseline_co2e_kg: 1.7, delta_co2e_kg: -1.2, category: "dining" },
+      skills_used: ["dining", "health", "energy", "sustainability_carbon"],
+      data_sources: ["carbon_factors", "local_planner"]
+    },
+    {
+      id: "block_bike_sat",
+      title: "Bike study trip",
+      type: "study",
+      start: "2026-05-02T10:30:00",
+      end: "2026-05-02T12:00:00",
+      location: "Study cafe",
+      reason: "A weekend study block is paired with biking instead of a car trip, keeping academic progress and carbon goals aligned.",
+      scores: { time: 0.83, health: 0.8, energy: 0.84, sustainability: 0.9, carbon: 0.92 },
+      carbon: { estimated_co2e_kg: 0.05, baseline_co2e_kg: 0.7, delta_co2e_kg: -0.65, category: "transportation" },
+      skills_used: ["study", "transportation", "energy", "sustainability_carbon"],
+      data_sources: ["carbon_factors", "user_schedule"]
+    },
+    {
+      id: "block_meal_prep_sun",
+      title: "Low-waste meal prep",
+      type: "meal",
+      start: "2026-05-03T17:00:00",
+      end: "2026-05-03T18:15:00",
+      location: "Dorm kitchen",
+      reason: "Sunday meal prep turns leftover groceries into weekday meals, reducing food waste and lowering next week's dining impact.",
+      scores: { time: 0.78, health: 0.88, energy: 0.82, sustainability: 0.96, carbon: 0.94 },
+      carbon: { estimated_co2e_kg: 0.4, baseline_co2e_kg: 1.6, delta_co2e_kg: -1.2, category: "dining" },
+      skills_used: ["dining", "health", "energy", "sustainability_carbon", "calendar"],
+      data_sources: ["carbon_factors", "local_planner"]
     }
   ]
 };
