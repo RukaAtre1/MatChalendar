@@ -8,12 +8,14 @@ BACKEND_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BACKEND_DIR.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-from planner.master_planner import build_plan
 from food.food_store import load_dining_data
+from memory.memory_store import append_memory_update, read_memory
+from planner.planner_provider import PlannerProvider
 
 
 HOST = "127.0.0.1"
 PORT = 8000
+PLANNER_PROVIDER = PlannerProvider()
 
 
 class MatChalendarHandler(BaseHTTPRequestHandler):
@@ -39,10 +41,13 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == "/api/health":
-            self._send_json({"status": "ok", "planner": "deterministic_mvp"})
+            self._send_json({"status": "ok", "planner": "planner_provider"})
             return
         if path == "/api/dining":
             self._send_json({"items": load_dining_data()})
+            return
+        if path == "/api/memory":
+            self._send_json({"memory": read_memory()})
             return
         if path == "/api/demo-schedule":
             schedule_path = BACKEND_DIR / "data" / "sample_schedule.json"
@@ -53,7 +58,7 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path != "/api/plan":
+        if path not in ("/api/plan", "/api/memory/update"):
             self._send_json({"error": "not_found"}, status=404)
             return
 
@@ -65,8 +70,12 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
             self._send_json({"error": "invalid_json"}, status=400)
             return
 
-        prompt = payload.get("prompt", "")
-        self._send_json(build_plan(prompt))
+        if path == "/api/plan":
+            self._send_json(PLANNER_PROVIDER.plan(payload))
+            return
+
+        markdown_patch = payload.get("markdown_patch", "")
+        self._send_json({"memory": append_memory_update(markdown_patch), "saved": bool(markdown_patch.strip())})
 
     def _serve_static(self, path):
         if path in ("", "/"):
