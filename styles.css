@@ -161,15 +161,19 @@ h2 {
   50% { box-shadow: 0 0 0 7px rgba(61, 107, 64, 0.06); }
 }
 
-/* -- THREE-PANEL WORKSPACE -- */
+/* -- WORKSPACE -- */
 .workspace {
   display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(260px, 310px);
+  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr);
   gap: 12px;
   max-width: 1640px;
   height: calc(100vh - 80px);
   min-height: 0;
   margin: 0 auto;
+}
+
+.workspace.drawer-open {
+  grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(260px, 310px);
 }
 
 /* -- PANEL BASE -- */
@@ -841,6 +845,10 @@ textarea:focus {
   .workspace {
     grid-template-columns: 320px 1fr;
     height: auto;
+  }
+
+  .workspace.drawer-open {
+    grid-template-columns: 320px 1fr;
   }
 
   .detail-drawer {

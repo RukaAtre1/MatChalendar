@@ -182,9 +182,11 @@ const hourHeight = 36;
 
 const form = document.querySelector("#plannerForm");
 const trace = document.querySelector("#compactTrace");
+const workspace = document.querySelector(".workspace");
 const calendarGrid = document.querySelector("#calendarGrid");
 const planSummary = document.querySelector("#planSummary");
 const regenerateBtn = document.querySelector("#regenerateBtn");
+const detailDrawer = document.querySelector(".detail-drawer");
 const drawerEmpty = document.querySelector("#drawerEmpty");
 const drawerContent = document.querySelector("#drawerContent");
 const closeDrawer = document.querySelector("#closeDrawer");
@@ -328,6 +330,8 @@ function selectBlock(blockId) {
     button.classList.toggle("selected", button.dataset.blockId === blockId);
   });
 
+  workspace.classList.add("drawer-open");
+  detailDrawer.hidden = false;
   drawerEmpty.hidden = true;
   drawerContent.hidden = false;
 
@@ -369,12 +373,11 @@ function scoreRow(key, value) {
 
 function clearSelection() {
   selectedBlock = null;
+  workspace.classList.remove("drawer-open");
+  detailDrawer.hidden = true;
   drawerContent.hidden = true;
   drawerEmpty.hidden = false;
-  drawerEmpty.innerHTML = `
-    <h2>Plan details</h2>
-    <p>Block explanations, scores, carbon impact, skills, and sources appear here.</p>
-  `;
+  drawerEmpty.innerHTML = "";
   document.querySelectorAll(".calendar-block").forEach((button) => button.classList.remove("selected"));
 }
 
