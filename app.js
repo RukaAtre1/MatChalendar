@@ -8,6 +8,8 @@ const plannerSteps = [
   "Rendering PlanResponse"
 ];
 
+const defaultPlanTitle = "Carbon-aware UCLA week ready.";
+
 const plannerRequestTimeoutMs = 30000;
 
 const skillLabels = {
@@ -319,12 +321,12 @@ let selectedBlock = null;
 let currentBlocks = [];
 let pendingMemoryPatch = "";
 
-function renderTrace(activeIndex = -1, complete = false) {
+function renderTrace(activeIndex = -1, complete = false, steps = plannerSteps) {
   trace.hidden = false;
-  trace.innerHTML = plannerSteps
+  trace.innerHTML = steps
     .map((step, index) => {
       const state = complete || index < activeIndex ? "done" : index === activeIndex ? "active" : "";
-      return `<li class="${state}">${step}</li>`;
+      return `<li class="${state}">${escapeHtml(step)}</li>`;
     })
     .join("");
 }
@@ -410,8 +412,110 @@ function applyPlan(plan) {
   renderCarbonBudget(plan.carbon_budget);
   renderPlannerMetadata(plan);
   renderMemorySuggestion(plan.memory_update_suggestion);
-  planSummary.textContent = plan.summary || "PlanResponse generated.";
+  planSummary.textContent = displayPlanTitle(plan);
+  const executionSteps = buildExecutionSteps(plan);
+  renderTrace(executionSteps.length - 1, true, executionSteps);
   clearSelection();
+}
+
+function displayPlanTitle(plan) {
+  const goal = String(plan.intent?.primary_goal || "").toLowerCase();
+  if (goal.includes("study") || goal.includes("homework")) return "Focused study week ready.";
+  if (goal.includes("recovery") || goal.includes("energy")) return "Balanced recovery week ready.";
+  if (goal.includes("carbon") || goal.includes("sustain")) return defaultPlanTitle;
+  return "Weekly campus plan ready.";
+}
+
+function buildExecutionSteps(plan) {
+  const contextSteps = (plan.ai_planner_context?.priority_order || []).map(shortPolicyPhrase).filter(Boolean);
+  const strategySteps = strategyToSteps(plan.calendar_strategy || plan.explanation_draft || "");
+  const blockSteps = blocksToSteps(plan.plan_blocks || []);
+  const steps = uniqueList([...contextSteps, ...strategySteps, ...blockSteps]);
+  return steps.length > 0 ? steps.slice(0, 6) : plannerSteps;
+}
+
+function strategyToSteps(strategy) {
+  const cleaned = String(strategy)
+    .replace(/^Your week was replanned with this strategy:\s*/i, "")
+    .trim();
+  if (!cleaned) return [];
+
+  const numbered = [];
+  const numberedPattern = /\(\d+\)\s*([\s\S]*?)(?=(?:,\s*)?\(\d+\)|$)/g;
+  let match = numberedPattern.exec(cleaned);
+  while (match) {
+    numbered.push(match[1]);
+    match = numberedPattern.exec(cleaned);
+  }
+
+  const clauses = numbered.length > 0
+    ? numbered
+    : cleaned
+        .split(/(?:;|\.\s+|\band\b\s+(?=\w))/i)
+        .filter((part) => part.length > 0);
+
+  return clauses.map(shortPolicyPhrase).filter(Boolean);
+}
+
+function shortPolicyPhrase(value) {
+  const text = String(value)
+    .replace(/\s+/g, " ")
+    .replace(/[.)]+$/g, "")
+    .trim();
+  const lower = text.toLowerCase();
+  if (!text) return "";
+
+  if (lower.includes("10-2") || lower.includes("10 to 2")) return "Protect 10-2 class block";
+  if (lower.includes("fixed") || lower.includes("class")) return "Protect fixed class blocks";
+  if (lower.includes("homework")) return "Schedule homework tonight";
+  if (lower.includes("focused") || lower.includes("study")) return "Schedule focused study blocks";
+  if (lower.includes("walk") || lower.includes("bike") || lower.includes("transit") || lower.includes("transportation")) {
+    return "Walk, bike, and use transit";
+  }
+  if (lower.includes("vegetarian")) return "Prefer vegetarian meals";
+  if (lower.includes("plant") || lower.includes("dining") || lower.includes("meal") || lower.includes("waste")) {
+    return "Choose low-waste plant-forward meals";
+  }
+  if (lower.includes("carbon") || lower.includes("sustainability")) return "Track carbon-aware choices";
+  if (lower.includes("cluster") || lower.includes("trip")) return "Cluster errands and activities";
+  if (lower.includes("recovery") || lower.includes("energy") || lower.includes("wind-down")) return "Protect recovery time";
+  if (lower.includes("meeting") || lower.includes("group")) return "Schedule group project time";
+
+  return sentenceCase(text)
+    .replace(/^Preserving\b/i, "Protect")
+    .replace(/^Scheduling\b/i, "Schedule")
+    .replace(/^Using\b/i, "Use")
+    .replace(/^Choosing\b/i, "Choose")
+    .replace(/^Clustering\b/i, "Cluster");
+}
+
+function blocksToSteps(blocks) {
+  return blocks.map(blockToStep).filter(Boolean);
+}
+
+function blockToStep(block) {
+  const title = block.title || block.location || "";
+  if (block.type === "class") return `Protect ${title} block`;
+  if (block.type === "study") return `Place ${title}`;
+  if (block.type === "meal") return `Plan low-carbon ${block.location || "meal"}`;
+  if (block.type === "commute") return `Use ${title || block.location}`;
+  if (block.type === "recovery" || block.type === "rest") return `Add ${title}`;
+  return "";
+}
+
+function uniqueList(values) {
+  const seen = new Set();
+  return values.filter((value) => {
+    const key = value.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function sentenceCase(value) {
+  const text = String(value).trim();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
 }
 
 function renderPlannerMetadata(plan) {
