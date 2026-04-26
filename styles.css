@@ -507,13 +507,6 @@ textarea:focus {
   line-height: 1.5;
 }
 
-.planner-meta {
-  margin-top: 3px;
-  color: var(--text-soft);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
 .calendar-grid {
   display: grid;
   grid-template-columns: 46px repeat(7, minmax(72px, 1fr));
