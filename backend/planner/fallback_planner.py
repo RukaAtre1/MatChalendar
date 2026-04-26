@@ -53,7 +53,7 @@ def build_fallback_plan(prompt, planner_context=None):
         "tradeoffs": ai_contract.get("tradeoffs", []),
         "calendar_strategy": ai_contract.get(
             "calendar_strategy",
-            "Protect fixed events, place recovery and meals around them, then add study and low-carbon choices.",
+            "Protect fixed events, health, energy, and complete meals first, then add study and low-carbon choices.",
         ),
         "ai_planner_context": ai_contract.get("ai_planner_context", {}),
         "explanation_draft": ai_contract.get("explanation_draft", ""),
@@ -87,15 +87,17 @@ def _select_skills(intent, ai_contract):
 def _run_skills(intent, selected_skills):
     skill_outputs = {}
     for skill in selected_skills:
-        if skill == "explanation":
+        if skill in ("explanation", "sustainability_carbon"):
             continue
         runner = SKILL_RUNNERS.get(skill)
         if runner:
             skill_outputs[skill] = runner(intent, skill_outputs)
 
-    for required in ("calendar", "dining", "sustainability_carbon"):
+    for required in ("calendar", "dining", "transportation", "health"):
         if required not in skill_outputs:
             skill_outputs[required] = SKILL_RUNNERS[required](intent, skill_outputs)
+
+    skill_outputs["sustainability_carbon"] = SKILL_RUNNERS["sustainability_carbon"](intent, skill_outputs)
 
     return skill_outputs
 
@@ -126,14 +128,14 @@ def _summary(ai_contract):
     strategy = ai_contract.get("calendar_strategy")
     if strategy:
         return f"Your week was replanned with this strategy: {strategy}"
-    return "Your week was replanned to balance class, homework, energy, meals, and your carbon reduction goal."
+    return "Your week was replanned to protect health, energy, complete meals, homework, and then carbon reduction."
 
 
 def _fallback_understanding(intent):
     return {
         "goals": [intent.get("primary_goal", "balanced_week")],
         "constraints": intent.get("detected_constraints", []),
-        "priority_order": ["fixed_events", "health_energy", "academic_work", "carbon_reduction"],
+        "priority_order": ["fixed_events", "health_energy", "complete_meals", "academic_work", "carbon_reduction"],
         "planning_scope": intent.get("planning_scope", "today"),
     }
 

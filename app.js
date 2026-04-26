@@ -31,7 +31,7 @@ const scoreLabels = {
 };
 
 const fallbackPlanResponse = {
-  summary: "A low-carbon campus week that turns everyday student routines into climate actions.",
+  summary: "A health-first campus week that protects energy and complete meals before optimizing climate impact.",
   generated_by: "local_fallback_plan_response",
   metadata: {
     generated_by: "local_fallback_plan_response",
@@ -305,18 +305,33 @@ const closeDrawer = document.querySelector("#closeDrawer");
 const promptInput = document.querySelector("#promptInput");
 const menuSection = document.querySelector("#menuSection");
 const menuSections = document.querySelector("#menuSections");
+const nutritionSection = document.querySelector("#nutritionSection");
+const nutritionDetails = document.querySelector("#nutritionDetails");
+const mealStatus = document.querySelector("#mealStatus");
+const whySection = document.querySelector("#whySection");
+const whyDetails = document.querySelector("#whyDetails");
+const activitySection = document.querySelector("#activitySection");
+const activityDetails = document.querySelector("#activityDetails");
+const transportSection = document.querySelector("#transportSection");
+const transportDetails = document.querySelector("#transportDetails");
 const choicesSection = document.querySelector("#choicesSection");
 const diningChoices = document.querySelector("#diningChoices");
+const climateDetails = document.querySelector("#climateDetails");
 const plannerBadge = document.querySelector("#plannerBadge");
 const memoryCard = document.querySelector("#memoryCard");
 const memoryReason = document.querySelector("#memoryReason");
 const memoryPatch = document.querySelector("#memoryPatch");
 const saveMemoryBtn = document.querySelector("#saveMemoryBtn");
 const ignoreMemoryBtn = document.querySelector("#ignoreMemoryBtn");
+const openMemoryBtn = document.querySelector("#openMemoryBtn");
+const closeMemoryBtn = document.querySelector("#closeMemoryBtn");
+const memoryViewer = document.querySelector("#memoryViewer");
+const memoryViewerContent = document.querySelector("#memoryViewerContent");
 
 let selectedBlock = null;
 let currentBlocks = [];
 let pendingMemoryPatch = "";
+let currentMemorySections = [];
 
 function renderTrace(activeIndex = -1, complete = false, steps = plannerSteps) {
   trace.hidden = false;
@@ -379,6 +394,7 @@ function renderCalendar(blocks) {
           </span>
           <span class="block-bottom">
             <span>${block.location}</span>
+            ${mealCalendarBadge(block)}
             <span class="carbon-mini-pill">${carbonFootprintLabel(block)}</span>
           </span>
         `;
@@ -526,6 +542,9 @@ function renderMemorySuggestion(suggestion) {
   if (!shouldShow) return;
   memoryReason.textContent = suggestion.reason || "The planner found a preference that may be useful later.";
   memoryPatch.textContent = suggestion.markdown_patch;
+  memoryPatch.setAttribute("contenteditable", "true");
+  memoryPatch.setAttribute("role", "textbox");
+  memoryPatch.setAttribute("aria-label", "Editable memory preference suggestion");
 }
 
 function renderCarbonBudget(budget) {
@@ -533,11 +552,22 @@ function renderCarbonBudget(budget) {
   const current = budget.current_estimated_kg_co2e;
   const target = budget.weekly_target_kg_co2e;
   const percent = Math.min(100, Math.round((current / target) * 100));
+  const budgetCard = document.querySelector(".carbon-card");
+  const meter = document.querySelector("#carbonMeter");
+  const budgetLevel = carbonBudgetLevel(current, target);
 
   document.querySelector("#carbonCurrent").textContent = current.toFixed(1);
   document.querySelector("#carbonTarget").textContent = `/ ${formatKg(target)} kg CO2e`;
   document.querySelector("#carbonPercent").textContent = `${percent}%`;
-  document.querySelector("#carbonMeter").style.width = `${percent}%`;
+  meter.style.width = `${percent}%`;
+  budgetCard.classList.remove(
+    "budget-footprint-zero",
+    "budget-footprint-low",
+    "budget-footprint-moderate",
+    "budget-footprint-high"
+  );
+  budgetCard.classList.add(`budget-footprint-${budgetLevel}`);
+  budgetCard.dataset.footprintLevel = budgetLevel;
 }
 
 function selectBlock(blockId) {
@@ -555,25 +585,45 @@ function selectBlock(blockId) {
   drawerContent.hidden = false;
 
   document.querySelector("#blockType").textContent = block.type;
-  document.querySelector("#blockTitle").textContent = block.title;
+  document.querySelector("#blockTitle").textContent = block.type === "meal" ? mealPanelTitle(block) : block.title;
   document.querySelector("#blockMeta").textContent = `${block.day} | ${timeRange(block.start, block.end)} | ${block.location}`;
-  document.querySelector("#carbonEstimate").textContent = `${formatKg(block.carbon?.estimated_co2e_kg || 0)} kg CO2e`;
+  renderMealStatus(block);
   renderMenu(block);
+  renderNutrition(block);
+  renderClimate(block);
+  renderWhy(block);
+  renderActivity(block);
+  renderTransport(block);
   renderDiningChoices(block);
 }
 
+function renderMealStatus(block) {
+  const shouldShow = block.type === "meal";
+  mealStatus.hidden = !shouldShow;
+  if (!shouldShow) {
+    mealStatus.innerHTML = "";
+    return;
+  }
+
+  const healthLabel = block.adequacy_status === "complete_meal" ? "Health-first" : "Snack/side";
+  mealStatus.innerHTML = `
+    <span class="${block.adequacy_status === "complete_meal" ? "balanced-badge" : "meal-warning"}">${escapeHtml(healthLabel)}</span>
+    <span class="carbon-badge">${escapeHtml(carbonBadgeLabel(block))}</span>
+  `;
+}
+
 function renderMenu(block) {
-  const sections = Array.isArray(block.menu_sections) ? block.menu_sections : [];
+  const sections = block.type === "meal" ? mealCompositionGroups(block) : [];
   const shouldShowMenu = block.type === "meal" && sections.length > 0;
 
   menuSection.hidden = !shouldShowMenu;
   menuSections.innerHTML = shouldShowMenu
     ? sections
         .map((section) => `
-          <article class="menu-station">
-            <h3>${escapeHtml(section.station)}</h3>
+          <article class="meal-composition-card">
+            <h3>${escapeHtml(section.label)}</h3>
             <ul>
-              ${(section.items || []).map(menuItemMarkup).join("")}
+              ${(section.items || []).map(compositionItemMarkup).join("")}
             </ul>
           </article>
         `)
@@ -581,11 +631,81 @@ function renderMenu(block) {
     : "";
 }
 
+function renderNutrition(block) {
+  const nutrition = block.estimated_nutrition || block.nutrition || {};
+  const shouldShow = block.type === "meal" && Object.keys(nutrition).length > 0;
+  nutritionSection.hidden = !shouldShow;
+  nutritionDetails.innerHTML = shouldShow
+    ? [
+        metricMarkup("Overall", healthScoreLabel(block), ""),
+        metricMarkup("Energy", energyFitLabel(block, nutrition), ""),
+        metricMarkup("Protein", proteinFitLabel(nutrition.protein_g), ""),
+        metricMarkup("Fiber", fiberFitLabel(nutrition.fiber_g), ""),
+        metricMarkup("Added sugar", addedSugarFitLabel(nutrition.added_sugar_g), ""),
+        metricMarkup("Sodium", sodiumFitLabel(nutrition.sodium_mg), ""),
+        metricMarkup("Calories", nutrition.calories, "kcal"),
+        metricMarkup("Fat", nutrition.fat_g, "g")
+      ].join("")
+    : "";
+}
+
+function renderClimate(block) {
+  const footprint = Number(block.carbon?.estimated_co2e_kg || 0);
+  if (block.type !== "meal") {
+    climateDetails.innerHTML = `
+      <div class="impact-row"><span>Estimated footprint</span><strong>${formatKg(footprint)} kg CO2e</strong></div>
+    `;
+    return;
+  }
+
+  const comparison = climateComparisonCopy(footprint);
+  climateDetails.innerHTML = `
+    <div class="climate-box">
+      <strong>${formatKg(footprint)} kg CO2e</strong>
+      <span>${escapeHtml(carbonRatingLabel(footprint))} carbon rating</span>
+      <p>${escapeHtml(comparison.better)}</p>
+      <p>${escapeHtml(comparison.higher)}</p>
+    </div>
+  `;
+}
+
+function renderWhy() {
+  whySection.hidden = true;
+  whyDetails.textContent = "";
+}
+
+function renderActivity(block) {
+  const activity = block.activity || {};
+  const shouldShow = Object.keys(activity).length > 0;
+  activitySection.hidden = !shouldShow;
+  activityDetails.innerHTML = shouldShow
+    ? [
+        metricMarkup("Intensity", activity.intensity || "", ""),
+        metricMarkup("Duration", activity.duration_minutes, "min"),
+        metricMarkup("Burn", activity.calories_burned, "kcal"),
+        metricMarkup("Method", activity.method || "", "")
+      ].join("")
+    : "";
+}
+
+function renderTransport(block) {
+  const transport = block.transportation || {};
+  const shouldShow = Object.keys(transport).length > 0;
+  transportSection.hidden = !shouldShow;
+  transportDetails.innerHTML = shouldShow
+    ? [
+        metricMarkup("Mode", transport.mode || "", ""),
+        metricMarkup("Time", transport.estimated_minutes, "min"),
+        metricMarkup("Footprint", transport.estimated_co2e_kg, "kg CO2e")
+      ].join("")
+    : "";
+}
+
 function renderDiningChoices(block) {
   const choices = Array.isArray(block.dining_choices)
     ? block.dining_choices.filter((choice) => choice.dining_hall !== block.location)
     : [];
-  const shouldShowChoices = block.type === "meal" && choices.length > 0;
+  const shouldShowChoices = block.type !== "meal" && choices.length > 0;
 
   choicesSection.hidden = !shouldShowChoices;
   diningChoices.innerHTML = shouldShowChoices
@@ -606,10 +726,12 @@ function renderDiningChoices(block) {
 
 function diningChoiceMarkup(choice, index) {
   const sections = Array.isArray(choice.menu_sections) ? choice.menu_sections : [];
+  const statusLabel = choice.adequacy_status === "complete_meal" ? "Balanced meal" : "Snack/side";
   return `
     <details class="dining-choice" ${index === 0 ? "open" : ""}>
       <summary>
-        <span class="choice-name">${escapeHtml(choice.dining_hall)}</span>
+        <span class="choice-name">${escapeHtml(choice.meal_name || choice.dining_hall)}</span>
+        <span class="choice-status">${escapeHtml(statusLabel)}</span>
         <strong>${formatKg(choice.estimated_co2e_kg || 0)} kg CO2e</strong>
         <span class="choice-arrow" aria-hidden="true">›</span>
       </summary>
@@ -634,9 +756,275 @@ function menuItemMarkup(item) {
   return `
     <li>
       <span>${escapeHtml(normalizedItem.name)}</span>
-      <strong>x${formatQuantity(normalizedItem.quantity)}</strong>
+      <strong>${menuItemDetail(normalizedItem)}</strong>
     </li>
   `;
+}
+
+function compositionItemMarkup(item) {
+  const normalizedItem = typeof item === "string"
+    ? { name: item, quantity: 1 }
+    : item;
+  return `
+    <li>
+      <span>${escapeHtml(formatFoodName(normalizedItem.name))}</span>
+      <strong>${escapeHtml(portionLabel(normalizedItem))}</strong>
+    </li>
+  `;
+}
+
+function metricMarkup(label, value, unit) {
+  if (value === undefined || value === null || value === "") return "";
+  const display = typeof value === "number" ? formatQuantity(value) : escapeHtml(value);
+  return `
+    <div class="metric-chip">
+      <span>${escapeHtml(label)}</span>
+      <strong>${display}${unit ? ` ${escapeHtml(unit)}` : ""}</strong>
+    </div>
+  `;
+}
+
+function mealPanelTitle(block) {
+  const mealType = block.meal_type || "meal";
+  const location = block.location || "campus dining";
+  if (block.adequacy_status === "complete_meal") return `Balanced ${mealType} at ${location}`;
+  return block.meal_name || block.title || `${formatLabel(mealType)} at ${location}`;
+}
+
+function mealCompositionGroups(block) {
+  const plate = block.plate_balance || {};
+  const menuSections = Array.isArray(block.menu_sections) ? block.menu_sections : [];
+  const mealItems = flattenMenuItems(menuSections);
+  const classified = classifyMealItems(mealItems);
+  const groups = [
+    { label: "Protein", items: classified.protein },
+    { label: "Whole grain / carb", items: classified.carb },
+    { label: "Vegetables", items: classified.vegetable }
+  ];
+
+  fillMissingCompositionGroups(groups, plate, classified.optional);
+
+  const optionalItems = classified.optional.concat(itemsFromNames(normalizeNameList(plate.healthy_fat)));
+  const hydration = block.hydration_note || plate.hydration || "Water / unsweetened drink";
+  optionalItems.push(
+    { name: addOnEnergyCopy(block), quantity: 1 },
+    { name: hydrationName(hydration), quantity: 1 }
+  );
+
+  return groups
+    .concat({ label: "Optional add-on", items: uniqueMealItems(optionalItems) })
+    .map((group) => ({ ...group, items: uniqueMealItems(group.items).filter((item) => item.name) }))
+    .filter((group) => group.items.length);
+}
+
+function flattenMenuItems(menuSections) {
+  return menuSections.flatMap((section) => (
+    Array.isArray(section.items)
+      ? section.items.map((item) => (typeof item === "string"
+          ? { name: item, quantity: 1 }
+          : { ...item, name: item.name, quantity: item.quantity ?? 1 }))
+      : []
+  )).filter((item) => item.name && Number(item.quantity ?? 1) > 0);
+}
+
+function normalizeNameList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function classifyMealItems(mealItems) {
+  const result = { protein: [], carb: [], vegetable: [], optional: [] };
+  mealItems.forEach((item) => {
+    const category = mealItemCategory(item.name);
+    if (category) result[category].push(item);
+  });
+  return result;
+}
+
+function mealItemCategory(name) {
+  const lower = String(name || "").toLowerCase();
+  const optionalKeywords = ["fruit", "blueberry", "bar", "cookie", "cake", "crisp", "dessert", "milk"];
+  const proteinKeywords = ["bean", "edamame", "chicken", "tofu", "lentil", "egg", "fish", "salmon", "tuna", "turkey", "beef", "pork", "tempeh", "seitan", "garbanzo", "chickpea", "beyond burger", "burger"];
+  const vegetableKeywords = ["kale", "mushroom", "green", "dandelion", "vegetable", "salad", "lettuce", "broccoli", "spinach", "avocado", "tomato", "pepper", "cauliflower", "carrot", "squash"];
+  const carbKeywords = ["quinoa", "rice", "grain", "wrap", "bread", "pasta", "potato", "couscous", "oat", "noodle", "tortilla"];
+
+  if (optionalKeywords.some((keyword) => lower.includes(keyword))) return "optional";
+  if (proteinKeywords.some((keyword) => lower.includes(keyword))) return "protein";
+  if (carbKeywords.some((keyword) => lower.includes(keyword))) return "carb";
+  if (vegetableKeywords.some((keyword) => lower.includes(keyword))) return "vegetable";
+  return "";
+}
+
+function fillMissingCompositionGroups(groups, plate, optionalItems = []) {
+  const fallbackByLabel = {
+    Protein: itemsFromNames(normalizeNameList(plate.healthy_protein)),
+    "Whole grain / carb": itemsFromNames(normalizeNameList(plate.whole_grains_or_quality_carbs)),
+    Vegetables: itemsFromNames(normalizeNameList(plate.vegetables_and_fruits))
+  };
+  const used = new Set(groups.concat({ items: optionalItems }).flatMap((group) => group.items).map((item) => item.name.toLowerCase()));
+
+  groups.forEach((group) => {
+    if (group.items.length) return;
+    group.items = (fallbackByLabel[group.label] || []).filter((item) => {
+      const category = mealItemCategory(item.name);
+      if (category === "optional") return false;
+      if (category && category !== compositionCategoryForLabel(group.label)) return false;
+      const key = item.name.toLowerCase();
+      if (used.has(key)) return false;
+      used.add(key);
+      return true;
+    });
+  });
+}
+
+function compositionCategoryForLabel(label) {
+  if (label === "Protein") return "protein";
+  if (label === "Whole grain / carb") return "carb";
+  if (label === "Vegetables") return "vegetable";
+  return "";
+}
+
+function addOnEnergyCopy(block) {
+  const calories = Number((block.estimated_nutrition || block.nutrition || {}).calories || 0);
+  if (calories && calories < 600) return "Fruit or milk if you need more energy later";
+  return "Fruit or extra greens if you need more energy later";
+}
+
+function itemsFromNames(names) {
+  return names.map((name) => ({ name, quantity: 1 }));
+}
+
+function uniqueMealItems(items) {
+  const seen = new Set();
+  return items.filter((item) => {
+    const normalized = String(item?.name || "").trim();
+    const key = normalized.toLowerCase();
+    if (!normalized || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function formatFoodName(name) {
+  return String(name || "")
+    .replace(/\s+w\/\s+/gi, " with ")
+    .replace(/\s*&\s*/g, " and ")
+    .replace(/,\s*and\s*/gi, " · ")
+    .replace(/,\s*/g, " · ")
+    .replace(/\s+\/\s+/g, " / ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+function hydrationName(value) {
+  return String(value || "Water / unsweetened drink")
+    .replace(/^choose\s+/i, "")
+    .replace(/\ban?\s+unsweetened/i, "unsweetened")
+    .replace(/\s+or\s+/i, " / ")
+    .replace(/[.。]+$/g, "")
+    .trim();
+}
+
+function portionLabel(item) {
+  const quantity = item.quantity ?? 1;
+  return `×${formatQuantity(quantity)}`;
+}
+
+function healthScoreLabel(block) {
+  const score = Number(block.scores?.health);
+  if (!score) return adequacyLabel(block.adequacy_status);
+  return `${Math.round(score * 100)} / 100`;
+}
+
+function energyFitLabel(block, nutrition) {
+  const energy = Number(block.scores?.energy);
+  const calories = Number(nutrition.calories || 0);
+  if (energy >= 0.9 || calories >= 650) return "High";
+  if (energy >= 0.7 || calories >= 400) return "Medium";
+  return "Light";
+}
+
+function proteinFitLabel(value) {
+  const grams = Number(value || 0);
+  if (grams >= 30) return "Excellent";
+  if (grams >= 20) return "Good";
+  if (grams > 0) return "Low";
+  return "";
+}
+
+function fiberFitLabel(value) {
+  const grams = Number(value || 0);
+  if (grams >= 8) return "Excellent";
+  if (grams >= 5) return "Good";
+  if (grams > 0) return "Low";
+  return "";
+}
+
+function addedSugarFitLabel(value) {
+  const grams = Number(value || 0);
+  if (grams <= 2) return "Excellent";
+  if (grams <= 8) return "Moderate";
+  return "High";
+}
+
+function sodiumFitLabel(value) {
+  const mg = Number(value || 0);
+  if (mg <= 500) return "Excellent";
+  if (mg <= 900) return "Moderate";
+  return "High";
+}
+
+function carbonBadgeLabel(block) {
+  return `${carbonRatingLabel(Number(block.carbon?.estimated_co2e_kg || 0))} CO2`;
+}
+
+function carbonRatingLabel(value) {
+  if (value === 0) return "Zero";
+  if (value <= 0.8) return "Low";
+  if (value <= 2.2) return "Moderate-low";
+  if (value <= 3.5) return "Moderate";
+  return "High";
+}
+
+function climateComparisonCopy(value) {
+  if (value <= 0.8) {
+    return {
+      better: "Better than meat-heavy meals",
+      higher: "Close to fully plant-based meals"
+    };
+  }
+  return {
+    better: "Better than beef-heavy meals",
+    higher: "Higher than fully plant-based meals"
+  };
+}
+
+function mealCalendarBadge(block) {
+  if (block.type !== "meal" || block.adequacy_status !== "complete_meal") return "";
+  return `<span class="balanced-mini-pill">Balanced</span>`;
+}
+
+function adequacyLabel(status) {
+  const labels = {
+    complete_meal: "Complete meal",
+    incomplete_meal: "Incomplete meal",
+    snack: "Snack"
+  };
+  return labels[status] || "";
+}
+
+function formatWarning(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function menuItemDetail(item) {
+  const details = [];
+  if (item.quantity !== undefined) details.push(`x${formatQuantity(item.quantity)}`);
+  if (item.calories) details.push(`${formatQuantity(item.calories)} kcal`);
+  if (item.protein_g) details.push(`${formatQuantity(item.protein_g)}g protein`);
+  return escapeHtml(details.join(" | "));
 }
 
 function clearSelection() {
@@ -648,8 +1036,19 @@ function clearSelection() {
   drawerEmpty.innerHTML = "";
   menuSection.hidden = true;
   menuSections.innerHTML = "";
+  nutritionSection.hidden = true;
+  nutritionDetails.innerHTML = "";
+  mealStatus.hidden = true;
+  mealStatus.innerHTML = "";
+  whySection.hidden = true;
+  whyDetails.textContent = "";
+  activitySection.hidden = true;
+  activityDetails.innerHTML = "";
+  transportSection.hidden = true;
+  transportDetails.innerHTML = "";
   choicesSection.hidden = true;
   diningChoices.innerHTML = "";
+  climateDetails.innerHTML = "";
   document.querySelectorAll(".calendar-block").forEach((button) => button.classList.remove("selected"));
 }
 
@@ -680,7 +1079,7 @@ async function runPlanner() {
 async function requestPlan(prompt) {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), plannerRequestTimeoutMs);
-  const apiUrl = window.MATCHALENDAR_API_URL || "http://127.0.0.1:8000/api/plan";
+  const apiUrl = plannerApiUrl();
 
   try {
     const response = await fetch(apiUrl, {
@@ -703,11 +1102,11 @@ async function requestPlan(prompt) {
 }
 
 async function saveMemorySuggestion() {
+  pendingMemoryPatch = memoryPatch.textContent.trim();
   if (!pendingMemoryPatch) return;
-  const apiBase = (window.MATCHALENDAR_API_URL || "http://127.0.0.1:8000/api/plan").replace(/\/api\/plan$/, "");
   saveMemoryBtn.disabled = true;
   try {
-    const response = await fetch(`${apiBase}/api/memory/update`, {
+    const response = await fetch(`${apiBaseUrl()}/api/memory/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ markdown_patch: pendingMemoryPatch })
@@ -729,6 +1128,178 @@ async function saveMemorySuggestion() {
 function ignoreMemorySuggestion() {
   pendingMemoryPatch = "";
   memoryCard.hidden = true;
+}
+
+async function openMemoryViewer() {
+  memoryViewer.hidden = false;
+  openMemoryBtn.setAttribute("aria-expanded", "true");
+  memoryViewerContent.innerHTML = `<p class="memory-empty">Loading memory...</p>`;
+
+  try {
+    const response = await fetch(`${apiBaseUrl()}/api/memory`);
+    if (!response.ok) throw new Error(`Memory API returned ${response.status}`);
+    const payload = await response.json();
+    renderMemoryViewer(payload.memory || "");
+  } catch (error) {
+    memoryViewerContent.innerHTML = `<p class="memory-empty">Memory is unavailable while the backend is offline.</p>`;
+  }
+}
+
+function closeMemoryViewer() {
+  memoryViewer.hidden = true;
+  openMemoryBtn.setAttribute("aria-expanded", "false");
+}
+
+function renderMemoryViewer(markdown) {
+  currentMemorySections = parseMemoryMarkdown(markdown);
+  const visibleSections = currentMemorySections.filter((section) => section.items.length > 0);
+  if (!visibleSections.length) {
+    memoryViewerContent.innerHTML = `<p class="memory-empty">No saved preferences yet.</p>`;
+    return;
+  }
+
+  memoryViewerContent.innerHTML = visibleSections
+    .map((section) => `
+      <section class="memory-section" data-section-id="${section.id}">
+        <h3>${escapeHtml(section.title)}</h3>
+        <ul>
+          ${section.items.map((item) => `
+            <li class="memory-preference" data-item-id="${item.id}">
+              <textarea class="memory-preference-input" rows="1" aria-label="Edit preference">${escapeHtml(item.text)}</textarea>
+              <button class="memory-delete-button" type="button" aria-label="Delete preference">&times;</button>
+            </li>
+          `).join("")}
+        </ul>
+      </section>
+    `)
+    .join("");
+
+  memoryViewerContent.querySelectorAll(".memory-preference-input").forEach((input) => {
+    resizeMemoryInput(input);
+    input.addEventListener("input", () => resizeMemoryInput(input));
+    input.addEventListener("blur", () => saveEditedMemoryPreference(input));
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        input.blur();
+      }
+    });
+  });
+
+  memoryViewerContent.querySelectorAll(".memory-delete-button").forEach((button) => {
+    button.addEventListener("mousedown", (event) => event.preventDefault());
+    button.addEventListener("click", () => deleteMemoryPreference(button));
+  });
+}
+
+function parseMemoryMarkdown(markdown) {
+  const sections = [];
+  let current = null;
+  let sectionIndex = 0;
+  let itemIndex = 0;
+
+  String(markdown || "").split(/\r?\n/).forEach((line) => {
+    const heading = line.match(/^##\s+(.+)/);
+    if (heading) {
+      current = { id: `section_${sectionIndex}`, title: heading[1].trim(), items: [] };
+      sections.push(current);
+      sectionIndex += 1;
+      return;
+    }
+
+    const bullet = line.match(/^-\s+(.+)/);
+    if (bullet && current) {
+      current.items.push({ id: `item_${itemIndex}`, text: bullet[1].trim() });
+      itemIndex += 1;
+    }
+  });
+
+  return sections;
+}
+
+function serializeMemoryMarkdown(sections) {
+  const blocks = ["# MatChalendar MEMORY"];
+  sections.forEach((section) => {
+    blocks.push("");
+    blocks.push(`## ${section.title}`);
+    blocks.push("");
+    section.items.forEach((item) => {
+      const text = item.text.trim();
+      if (text) blocks.push(`- ${text}`);
+    });
+  });
+  return `${blocks.join("\n").trim()}\n`;
+}
+
+async function saveCurrentMemory() {
+  const response = await fetch(`${apiBaseUrl()}/api/memory/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ memory: serializeMemoryMarkdown(currentMemorySections) })
+  });
+  if (!response.ok) throw new Error(`Memory API returned ${response.status}`);
+  const payload = await response.json();
+  renderMemoryViewer(payload.memory || "");
+}
+
+async function saveEditedMemoryPreference(input) {
+  const preference = findMemoryPreference(input);
+  if (!preference) return;
+
+  const nextText = input.value.replace(/\s+/g, " ").trim();
+  if (!nextText) {
+    await deleteMemoryPreference(input);
+    return;
+  }
+  if (nextText === preference.item.text) return;
+
+  preference.item.text = nextText;
+  await persistMemoryEdit(input);
+}
+
+async function deleteMemoryPreference(source) {
+  const preference = findMemoryPreference(source);
+  if (!preference) return;
+
+  preference.section.items = preference.section.items.filter((item) => item.id !== preference.item.id);
+  await persistMemoryEdit(source);
+}
+
+async function persistMemoryEdit(source) {
+  const preferenceEl = source.closest(".memory-preference");
+  if (preferenceEl) preferenceEl.classList.add("saving");
+  try {
+    await saveCurrentMemory();
+  } catch (error) {
+    memoryViewerContent.innerHTML = `<p class="memory-empty">Could not save memory because the backend is unavailable.</p>`;
+  }
+}
+
+function findMemoryPreference(source) {
+  const preferenceEl = source.closest(".memory-preference");
+  const sectionEl = source.closest(".memory-section");
+  if (!preferenceEl || !sectionEl) return null;
+
+  const section = currentMemorySections.find((item) => item.id === sectionEl.dataset.sectionId);
+  const item = section?.items.find((entry) => entry.id === preferenceEl.dataset.itemId);
+  return section && item ? { section, item } : null;
+}
+
+function resizeMemoryInput(input) {
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+}
+
+function apiBaseUrl() {
+  return plannerApiUrl().replace(/\/api\/plan$/, "");
+}
+
+function plannerApiUrl() {
+  if (window.MATCHALENDAR_API_URL) return window.MATCHALENDAR_API_URL;
+  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+    return `${window.location.origin}/api/plan`;
+  }
+  return "http://127.0.0.1:8000/api/plan";
 }
 
 function minutesFromStart(iso) {
@@ -811,8 +1382,12 @@ function escapeHtml(value) {
 }
 
 function carbonLevel(block) {
-  const footprint = Number(block.carbon?.estimated_co2e_kg || 0);
-  if (footprint === 0) return "zero";
+  return carbonFootprintLevel(block.carbon?.estimated_co2e_kg);
+}
+
+function carbonFootprintLevel(value) {
+  const footprint = Number(value || 0);
+  if (footprint <= 0) return "zero";
   if (footprint <= 0.3) return "low";
   if (footprint <= 0.8) return "moderate";
   return "high";
@@ -821,6 +1396,18 @@ function carbonLevel(block) {
 function carbonFootprintLabel(block) {
   const footprint = Number(block.carbon?.estimated_co2e_kg || 0);
   return `${formatKg(footprint)} kg`;
+}
+
+function carbonBudgetLevel(current, target) {
+  const currentKg = Number(current || 0);
+  const targetKg = Number(target || 0);
+  if (currentKg <= 0) return "zero";
+  if (targetKg <= 0) return "high";
+
+  const usageRatio = currentKg / targetKg;
+  if (usageRatio <= 0.5) return "low";
+  if (usageRatio <= 0.75) return "moderate";
+  return "high";
 }
 
 function delay(ms) {
@@ -836,6 +1423,14 @@ regenerateBtn.addEventListener("click", runPlanner);
 closeDrawer.addEventListener("click", clearSelection);
 saveMemoryBtn.addEventListener("click", saveMemorySuggestion);
 ignoreMemoryBtn.addEventListener("click", ignoreMemorySuggestion);
+openMemoryBtn.addEventListener("click", () => {
+  if (memoryViewer.hidden) {
+    openMemoryViewer();
+  } else {
+    closeMemoryViewer();
+  }
+});
+closeMemoryBtn.addEventListener("click", closeMemoryViewer);
 
 renderCalendar([]);
 renderCarbonBudget(fallbackPlanResponse.carbon_budget);

@@ -14,8 +14,14 @@ Desktop.ini
 node_modules/
 package-lock.json
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Misc
 *.log
+.codex-layout-check.png
+backend/data/dining_cache/
 
 # Local secrets
 .env

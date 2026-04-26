@@ -1,15 +1,15 @@
-from planner.planner_provider import PlannerProvider
+from runtime_router import RuntimeRouter
 
 
 class CampusLifePlannerAgent:
     name = "CampusLifePlannerAgent"
     description = "MatChalendar campus life planner agent for explainable, carbon-aware weekly planning."
 
-    def __init__(self, planner_provider=None):
-        self.planner_provider = planner_provider or PlannerProvider()
+    def __init__(self, planner_provider=None, runtime_router=None):
+        self.runtime_router = runtime_router or RuntimeRouter(planner_provider=planner_provider)
 
     def run(self, prompt, concise=False):
-        plan = self.planner_provider.plan({"prompt": prompt})
+        plan = self.runtime_router.plan({"prompt": prompt})
         if concise:
             return {
                 "summary": plan.get("summary", ""),
@@ -30,4 +30,3 @@ class CampusLifePlannerAgent:
 
 def run(prompt, concise=False):
     return CampusLifePlannerAgent().run(prompt, concise=concise)
-

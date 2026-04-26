@@ -83,7 +83,7 @@ def heuristic_planner_contract(prompt, soul="", memory=""):
         "understanding": {
             "goals": goals,
             "constraints": constraints,
-            "priority_order": ["fixed_events", "user_energy", "academic_work", "dining", "transportation", "carbon"],
+            "priority_order": ["fixed_events", "health_energy", "academic_work", "dining", "transportation", "carbon"],
             "planning_scope": intent.get("planning_scope", "today"),
         },
         "skill_calls": skill_calls,
@@ -163,7 +163,7 @@ def _skill_reason(skill, goals, constraints):
     if skill == "calendar":
         return "Protect fixed events and avoid time conflicts."
     if skill == "dining":
-        return "Find meals that support health, energy, and lower-carbon choices."
+        return "Find nutritionally adequate meals first, then rank lower-carbon choices."
     if skill == "study":
         return "Place homework and review blocks without overloading the evening."
     if skill == "health":
@@ -186,12 +186,13 @@ def _tradeoffs(constraints, goals):
     if "homework_tonight" in constraints:
         tradeoffs.append("Homework remains tonight, but recovery and dining buffers prevent an overloaded evening.")
     if "reduce_weekly_carbon" in goals:
-        tradeoffs.append("Lower-carbon dining and transportation are prioritized when timing and energy allow.")
+        tradeoffs.append("Lower-carbon dining and transportation are prioritized only after health and energy needs are protected.")
     return tradeoffs
 
 
 def _calendar_strategy(constraints, goals, soul_used, memory_used):
     parts = ["Respect fixed events first"]
+    parts.append("protect health, meal adequacy, and energy before carbon optimization")
     if "homework_tonight" in constraints:
         parts.append("place homework after dinner with a transition buffer")
     if "reduce_weekly_carbon" in goals or "emergency_uber" in constraints:
@@ -206,14 +207,103 @@ def _calendar_strategy(constraints, goals, soul_used, memory_used):
 
 def _memory_suggestion(prompt):
     text = (prompt or "").lower()
-    if "prefer" in text or "i like" in text or "i hate" in text or "avoid" in text:
+    if not _contains_memory_signal(text):
+        return {
+            "should_update": False,
+            "reason": "",
+            "markdown_patch": "",
+        }
+
+    bullets = _memory_preference_bullets(prompt)
+    if bullets:
         return {
             "should_update": True,
-            "reason": "The prompt appears to contain a stable preference.",
-            "markdown_patch": f"- User preference from latest planning request: {prompt.strip()}",
+            "reason": "The prompt contains reusable planning preferences.",
+            "markdown_patch": "\n".join(f"- {bullet}" for bullet in bullets),
         }
+
     return {
         "should_update": False,
         "reason": "",
         "markdown_patch": "",
     }
+
+
+def _contains_memory_signal(text):
+    return any(
+        signal in text
+        for signal in (
+            "prefer",
+            "i like",
+            "i hate",
+            "avoid",
+            "keep my",
+            "low carbon",
+            "low-carbon",
+            "vegetarian",
+            "vegan",
+            "halal",
+            "walking",
+            "walk",
+            "bike",
+            "biking",
+            "transit",
+            "bus",
+            "focused study",
+        )
+    )
+
+
+def _memory_preference_bullets(prompt):
+    text = (prompt or "").lower()
+    intent = parse_intent(prompt)
+    bullets = []
+
+    dietary = set(intent.get("dietary_preferences", []))
+    transport = set(intent.get("transportation_preferences", []))
+
+    if "vegetarian" in dietary:
+        bullets.append("The user prefers vegetarian meal options when available.")
+    if "vegan" in dietary:
+        bullets.append("The user prefers vegan meal options when available.")
+    if "halal" in dietary:
+        bullets.append("The user prefers halal meal options when available.")
+    if "low_carbon" in dietary or intent.get("primary_goal") == "reduce_weekly_carbon":
+        bullets.append("The user prefers low-carbon food and planning choices when practical.")
+    if "near campus" in text or "on campus" in text or "campus dining" in text:
+        bullets.append("The user prefers campus or near-campus dining for routine meal planning.")
+
+    preferred_modes = []
+    if "walk" in transport:
+        preferred_modes.append("walking")
+    if "bike" in transport:
+        preferred_modes.append("biking")
+    if "bus" in transport:
+        preferred_modes.append("public transit")
+    if preferred_modes:
+        bullets.append(f"The user prefers {_format_list(preferred_modes)} when timing and energy allow.")
+    if "avoid_rideshare" in transport:
+        bullets.append("The user prefers to avoid rideshare unless it is necessary.")
+
+    if "focused study" in text or "focus study" in text or "focused homework" in text:
+        bullets.append("The user prefers focused study blocks with buffer time around fixed commitments.")
+    if "low energy" in text or "tired" in text or "exhausted" in text:
+        bullets.append("When energy is low, the user prefers gentle planning with recovery time protected.")
+
+    return _dedupe(bullets)
+
+
+def _dedupe(values):
+    result = []
+    for value in values:
+        if value not in result:
+            result.append(value)
+    return result
+
+
+def _format_list(values):
+    if len(values) <= 1:
+        return "".join(values)
+    if len(values) == 2:
+        return " and ".join(values)
+    return f"{', '.join(values[:-1])}, and {values[-1]}"

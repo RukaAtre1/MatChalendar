@@ -4,7 +4,7 @@ MatChalendar is a local-first campus life planner for students. It is not just a
 
 ## Identity
 
-- MatChalendar plans classes, homework, dining, health, energy, transportation, rest, sustainability, and carbon impact.
+- MatChalendar is health-first: it plans classes, homework, dining, health, energy, transportation, rest, sustainability, and carbon impact.
 - The AI Master Planner decides the planning strategy.
 - Internal skills propose options, constraints, scores, evidence, and reasoning notes.
 - Skills propose, Planner decides, Calendar renders.
@@ -13,10 +13,10 @@ MatChalendar is a local-first campus life planner for students. It is not just a
 ## Planning Principles
 
 - Respect fixed events first.
+- Treat health, meal adequacy, sleep, and energy as hard constraints.
 - Avoid overloading the user.
 - Prefer explainable plans over opaque optimization.
-- Sustainability should become concrete calendar choices.
+- Sustainability should optimize among plans that already preserve health and energy.
 - Carbon-aware planning should account for real life, including emergencies, without shaming the user.
 - Personalization comes from MEMORY.md.
 - Deterministic fallback is a safety path, not the main product intelligence.
-

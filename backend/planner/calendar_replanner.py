@@ -2,9 +2,14 @@ MONDAY = "2026-04-27"
 
 
 def replan_calendar(intent, skill_outputs):
-    dining = skill_outputs["dining"]["recommendations"]
-    dinner = next(item for item in dining if item["meal_period"] == "dinner")
-    lunch = next(item for item in dining if item["meal_period"] == "lunch")
+    dining_output = skill_outputs["dining"]
+    dinner = _first_meal(dining_output, "dinner")
+    lunch = _first_meal(dining_output, "lunch") or dinner
+    transport_options = skill_outputs.get("transportation", {}).get("recommendations", [])
+    best_transport = transport_options[0] if transport_options else {"mode": "walk", "estimated_minutes": 30, "estimated_co2e_kg": 0.0}
+    health_recommendations = skill_outputs.get("health", {}).get("recommendations", [])
+    recovery_activity = _activity(health_recommendations, "recovery_walk")
+    workout_activity = _activity(health_recommendations, "light_workout")
     planner_text = _planner_text(intent)
     goal_text = _goal_text(intent)
     raw_text = _raw_planner_text(intent)
@@ -42,49 +47,74 @@ def replan_calendar(intent, skill_outputs):
             "reason": "A short walk after class creates an energy reset without adding more transportation emissions after the emergency Uber.",
             "scores": {"time": 0.88, "health": 0.84, "energy": 0.80, "sustainability": 0.90, "carbon": 0.96},
             "carbon": {"estimated_co2e_kg": 0.0, "baseline_co2e_kg": 0.4, "delta_co2e_kg": -0.4, "category": "transportation"},
+            "activity": _activity_payload(recovery_activity),
+            "transportation": {"mode": "walk", "estimated_minutes": 30, "estimated_co2e_kg": 0.0},
             "skills_used": ["calendar", "transportation", "energy", "health", "sustainability_carbon"],
             "data_sources": ["carbon_factors", "user_schedule"],
         },
         {
             "id": "block_dinner_mon",
-            "title": f"Low-carbon dinner at {dinner['dining_hall']}",
+            "title": dinner.get("meal_name") or f"Balanced dinner at {dinner['dining_hall']}",
             "type": "meal",
             "start": f"{MONDAY}T18:30:00",
             "end": f"{MONDAY}T19:15:00",
             "location": dinner["dining_hall"],
-            "reason": "The emergency Uber raised today's transportation impact, so dinner shifts toward a plant-forward option while preserving protein and evening energy.",
+            "meal_name": dinner.get("meal_name", dinner.get("name", "Balanced dinner")),
+            "meal_type": dinner.get("meal_type", "dinner"),
+            "reason": dinner.get("reason", "Dinner is selected after health adequacy is validated, then ranked for lower carbon impact."),
             "scores": {"time": 0.86, "health": dinner["scores"]["health"], "energy": dinner["scores"]["energy"], "sustainability": dinner["scores"]["sustainability"], "carbon": dinner["scores"]["carbon"]},
-            "carbon": {"estimated_co2e_kg": dinner["carbon"]["estimated_co2e_kg"], "baseline_co2e_kg": 1.8, "delta_co2e_kg": -1.1, "category": "dining"},
+            "carbon": _carbon_payload(dinner, 1.8),
+            "items": dinner.get("items", []),
+            "estimated_nutrition": dinner.get("estimated_nutrition", dinner.get("nutrition", {})),
+            "nutrition": dinner.get("estimated_nutrition", dinner.get("nutrition", {})),
+            "plate_balance": dinner.get("plate_balance", {}),
+            "adequacy_status": dinner.get("adequacy_status", "complete_meal"),
+            "adequacy_warnings": dinner.get("adequacy_warnings", []),
+            "menu_sections": _menu_sections(dinner),
+            "dining_choices": _dining_choices(dining_output, "dinner", dinner),
+            "source_url": dinner.get("source_url", ""),
             "skills_used": ["dining", "sustainability_carbon", "health", "energy", "calendar"],
-            "data_sources": ["ucla_dining_mock", "carbon_factors", "local_planner"],
+            "data_sources": ["ucla_dining_cache", "carbon_factors", "local_planner"],
         },
         _study_block(low_energy, study_heavy),
         _winddown_block(low_energy),
         {
             "id": "block_transit_tue",
-            "title": "Transit-first commute",
+            "title": _transport_title(best_transport),
             "type": "commute",
             "start": "2026-04-28T09:20:00",
             "end": "2026-04-28T09:50:00",
-            "location": "Big Blue Bus",
-            "reason": "Tomorrow's route uses transit where the schedule allows, compensating for today's ride-share without creating a rushed morning.",
-            "scores": {"time": 0.78, "health": 0.70, "energy": 0.74, "sustainability": 0.91, "carbon": 0.93},
-            "carbon": {"estimated_co2e_kg": 0.3, "baseline_co2e_kg": 1.2, "delta_co2e_kg": -0.9, "category": "transportation"},
+            "location": _transport_location(best_transport),
+            "reason": _transport_reason(best_transport),
+            "scores": {"time": 0.78, "health": 0.70, "energy": 0.74, "sustainability": 0.91, "carbon": best_transport.get("planner_score", 0.93)},
+            "carbon": {"estimated_co2e_kg": best_transport["estimated_co2e_kg"], "baseline_co2e_kg": 1.2, "delta_co2e_kg": round(best_transport["estimated_co2e_kg"] - 1.2, 2), "category": "transportation", "method": "carbon_factors"},
+            "transportation": best_transport,
             "skills_used": ["transportation", "sustainability_carbon", "calendar"],
             "data_sources": ["carbon_factors", "user_schedule"],
         },
         {
             "id": "block_lunch_tue",
-            "title": "Plant-forward lunch",
+            "title": lunch.get("meal_name") or "Balanced plant-forward lunch",
             "type": "meal",
             "start": "2026-04-28T12:00:00",
             "end": "2026-04-28T12:45:00",
             "location": lunch["dining_hall"],
-            "reason": "A lighter lunch keeps afternoon energy steady while continuing the lower-carbon dining pattern.",
+            "meal_name": lunch.get("meal_name", lunch.get("name", "Balanced lunch")),
+            "meal_type": lunch.get("meal_type", "lunch"),
+            "reason": lunch.get("reason", "Lunch is selected after health adequacy is validated, then ranked for lower carbon impact."),
             "scores": {"time": 0.84, "health": lunch["scores"]["health"], "energy": lunch["scores"]["energy"], "sustainability": lunch["scores"]["sustainability"], "carbon": lunch["scores"]["carbon"]},
-            "carbon": {"estimated_co2e_kg": lunch["carbon"]["estimated_co2e_kg"], "baseline_co2e_kg": 1.5, "delta_co2e_kg": -0.9, "category": "dining"},
+            "carbon": _carbon_payload(lunch, 1.5),
+            "items": lunch.get("items", []),
+            "estimated_nutrition": lunch.get("estimated_nutrition", lunch.get("nutrition", {})),
+            "nutrition": lunch.get("estimated_nutrition", lunch.get("nutrition", {})),
+            "plate_balance": lunch.get("plate_balance", {}),
+            "adequacy_status": lunch.get("adequacy_status", "complete_meal"),
+            "adequacy_warnings": lunch.get("adequacy_warnings", []),
+            "menu_sections": _menu_sections(lunch),
+            "dining_choices": _dining_choices(dining_output, "lunch", lunch),
+            "source_url": lunch.get("source_url", ""),
             "skills_used": ["dining", "health", "energy", "sustainability_carbon"],
-            "data_sources": ["ucla_dining_mock", "carbon_factors"],
+            "data_sources": ["ucla_dining_cache", "carbon_factors"],
         },
         {
             "id": "block_review_wed",
@@ -109,6 +139,7 @@ def replan_calendar(intent, skill_outputs):
             "reason": "A light workout lands in a low-conflict window and supports health without making the week feel overpacked.",
             "scores": {"time": 0.80, "health": 0.92, "energy": 0.75, "sustainability": 0.78, "carbon": 0.88},
             "carbon": {"estimated_co2e_kg": 0.02, "baseline_co2e_kg": 0.02, "delta_co2e_kg": 0.0, "category": "health"},
+            "activity": _activity_payload(workout_activity),
             "skills_used": ["health", "energy", "calendar"],
             "data_sources": ["local_planner"],
         },
@@ -153,6 +184,205 @@ def replan_calendar(intent, skill_outputs):
         blocks.extend(_sustainability_blocks(dinner))
 
     return _dedupe_blocks(blocks)
+
+
+def _first_meal(dining_output, meal_period):
+    candidates = dining_output.get("candidate_meals", {}).get(meal_period, [])
+    if candidates:
+        return candidates[0]
+    for item in dining_output.get("recommendations", []):
+        if item.get("meal_period") == meal_period:
+            return item
+    recommendations = dining_output.get("recommendations", [])
+    if recommendations:
+        return recommendations[0]
+    return {
+        "name": "Plant-forward campus meal",
+        "meal_name": "Balanced plant-forward campus meal",
+        "meal_type": meal_period,
+        "dining_hall": "UCLA Dining",
+        "meal_period": meal_period,
+        "station": "Recommended",
+        "items": [
+            {"name": "Lentil tofu protein", "station": "Protein", "quantity": 1, "calories": 260, "protein_g": 24, "carbs_g": 24, "fat_g": 8, "fiber_g": 9, "sodium_mg": 420},
+            {"name": "Brown rice or quinoa", "station": "Whole grains", "quantity": 1, "calories": 220, "protein_g": 6, "carbs_g": 44, "fat_g": 4, "fiber_g": 5, "sodium_mg": 120},
+            {"name": "Seasonal vegetables", "station": "Vegetables", "quantity": 1, "calories": 120, "protein_g": 5, "carbs_g": 22, "fat_g": 3, "fiber_g": 7, "sodium_mg": 180},
+        ],
+        "estimated_nutrition": {"calories": 600, "protein_g": 35, "carbs_g": 90, "fat_g": 15, "fiber_g": 21, "sodium_mg": 720, "added_sugar_g": 0},
+        "nutrition": {"calories": 600, "protein_g": 35, "carbs_g": 90, "fat_g": 15, "fiber_g": 21, "sodium_mg": 720, "added_sugar_g": 0},
+        "plate_balance": {
+            "heuristic": "Harvard Healthy Eating Plate",
+            "vegetables_and_fruits": ["Seasonal vegetables"],
+            "whole_grains_or_quality_carbs": ["Brown rice or quinoa"],
+            "healthy_protein": ["Lentil tofu protein"],
+            "healthy_fat": [],
+            "hydration": "Water or unsweetened drink",
+            "has_protein": True,
+            "has_grain_or_starch": True,
+            "has_vegetables": True,
+            "has_fruit_or_fiber": True,
+            "has_healthy_fat": False,
+        },
+        "adequacy_status": "complete_meal",
+        "adequacy_warnings": [],
+        "carbon": {"estimated_co2e_kg": 0.95, "method": "fallback_balanced_meal", "source": "local_planner"},
+        "scores": {"health": 0.88, "energy": 0.86, "sustainability": 0.88, "carbon": 0.76},
+        "reason": "This fallback meal protects energy adequacy first, then keeps the protein bundle plant-forward.",
+        "source_url": "",
+    }
+
+
+def _dining_choices(dining_output, meal_period, selected):
+    selected_id = selected.get("id")
+    choices = []
+    for item in dining_output.get("candidate_meals", {}).get(meal_period, []):
+        if item.get("id") == selected_id:
+            continue
+        choices.append(
+            {
+                "dining_hall": item.get("dining_hall", "UCLA Dining"),
+                "name": item.get("meal_name", item.get("name", "Menu item")),
+                "meal_name": item.get("meal_name", item.get("name", "Menu item")),
+                "meal_type": item.get("meal_type", meal_period),
+                "estimated_co2e_kg": item.get("carbon", {}).get("estimated_co2e_kg", 0),
+                "items": item.get("items", []),
+                "estimated_nutrition": item.get("estimated_nutrition", item.get("nutrition", {})),
+                "nutrition": item.get("estimated_nutrition", item.get("nutrition", {})),
+                "plate_balance": item.get("plate_balance", {}),
+                "adequacy_status": item.get("adequacy_status", "complete_meal"),
+                "adequacy_warnings": item.get("adequacy_warnings", []),
+                "source_url": item.get("source_url", ""),
+                "menu_sections": _menu_sections(item),
+            }
+        )
+    return choices[:4]
+
+
+def _menu_sections(item):
+    if item.get("menu_sections"):
+        return item["menu_sections"]
+    if item.get("items"):
+        sections = {}
+        for menu_item in item["items"]:
+            station = menu_item.get("station") or "Recommended"
+            sections.setdefault(station, []).append(menu_item)
+        return [{"station": station, "items": items} for station, items in sections.items()]
+    return [
+        {
+            "station": item.get("station") or "Recommended",
+            "items": [
+                {
+                    "name": item.get("name", "Menu item"),
+                    "quantity": 1,
+                    "calories": item.get("nutrition", {}).get("calories"),
+                    "protein_g": item.get("nutrition", {}).get("protein_g"),
+                }
+            ],
+        }
+    ]
+
+
+def _carbon_payload(item, baseline):
+    estimated = float(item.get("carbon", {}).get("estimated_co2e_kg", 0))
+    return {
+        "estimated_co2e_kg": estimated,
+        "baseline_co2e_kg": baseline,
+        "delta_co2e_kg": round(estimated - baseline, 2),
+        "category": "dining",
+        "method": item.get("carbon", {}).get("method", "ucla_tag_plus_estimator"),
+        "source": item.get("carbon", {}).get("source", "ucla_dining_cache"),
+    }
+
+
+def _meal_extra(meal, meal_type):
+    return {
+        "meal_name": meal.get("meal_name", meal.get("name", "Balanced meal")),
+        "meal_type": meal.get("meal_type", meal_type),
+        "items": meal.get("items", []),
+        "estimated_nutrition": meal.get("estimated_nutrition", meal.get("nutrition", {})),
+        "nutrition": meal.get("estimated_nutrition", meal.get("nutrition", {})),
+        "plate_balance": meal.get("plate_balance", {}),
+        "adequacy_status": meal.get("adequacy_status", "complete_meal"),
+        "adequacy_warnings": meal.get("adequacy_warnings", []),
+        "menu_sections": _menu_sections(meal),
+        "source_url": meal.get("source_url", ""),
+    }
+
+
+def _static_balanced_meal_extra(meal_name, meal_type, reason):
+    items = [
+        {"name": "Bean or tofu protein", "station": "Protein", "quantity": 1, "calories": 260, "protein_g": 24, "carbs_g": 24, "fat_g": 8, "fiber_g": 9, "sodium_mg": 420},
+        {"name": "Brown rice or whole grain", "station": "Whole grains", "quantity": 1, "calories": 220, "protein_g": 6, "carbs_g": 44, "fat_g": 4, "fiber_g": 5, "sodium_mg": 120},
+        {"name": "Seasonal vegetables", "station": "Vegetables", "quantity": 1, "calories": 140, "protein_g": 5, "carbs_g": 24, "fat_g": 4, "fiber_g": 7, "sodium_mg": 190},
+        {"name": "Fruit or extra greens", "station": "Fruit and fiber", "quantity": 1, "calories": 80, "protein_g": 1, "carbs_g": 20, "fat_g": 0, "fiber_g": 4, "sodium_mg": 20},
+    ]
+    nutrition = {"calories": 700, "protein_g": 36, "carbs_g": 112, "fat_g": 16, "fiber_g": 25, "sodium_mg": 750, "added_sugar_g": 0}
+    return {
+        "meal_name": meal_name,
+        "meal_type": meal_type,
+        "items": items,
+        "estimated_nutrition": nutrition,
+        "nutrition": nutrition,
+        "plate_balance": {
+            "heuristic": "Harvard Healthy Eating Plate",
+            "vegetables_and_fruits": ["Seasonal vegetables", "Fruit or extra greens"],
+            "whole_grains_or_quality_carbs": ["Brown rice or whole grain"],
+            "healthy_protein": ["Bean or tofu protein"],
+            "healthy_fat": [],
+            "hydration": "Water or unsweetened drink",
+            "has_protein": True,
+            "has_grain_or_starch": True,
+            "has_vegetables": True,
+            "has_fruit_or_fiber": True,
+            "has_healthy_fat": False,
+        },
+        "adequacy_status": "complete_meal",
+        "adequacy_warnings": [],
+        "menu_sections": [
+            {"station": "Protein", "items": [items[0]]},
+            {"station": "Whole grains", "items": [items[1]]},
+            {"station": "Vegetables and fruit", "items": items[2:]},
+        ],
+        "reason": reason,
+    }
+
+
+def _activity(recommendations, activity_name):
+    for item in recommendations:
+        if item.get("activity") == activity_name:
+            return item
+    return {}
+
+
+def _activity_payload(activity):
+    if not activity:
+        return {}
+    return {
+        "name": activity.get("activity"),
+        "duration_minutes": activity.get("duration_minutes"),
+        "calories_burned": activity.get("calories_burned"),
+        "intensity": activity.get("intensity"),
+        "weight_kg": activity.get("weight_kg"),
+        "method": "met_estimate_defaults",
+    }
+
+
+def _transport_title(option):
+    labels = {"walk": "Walk-first commute", "bike": "Bike-first commute", "bus": "Transit-first commute", "rideshare": "Rideshare commute"}
+    return labels.get(option.get("mode"), "Low-carbon commute")
+
+
+def _transport_location(option):
+    labels = {"walk": "UCLA walking route", "bike": "Bike route", "bus": "Big Blue Bus", "rideshare": "Rideshare"}
+    return labels.get(option.get("mode"), "Campus route")
+
+
+def _transport_reason(option):
+    if option.get("mode") in ("walk", "bike"):
+        return "Tomorrow's route uses an active, zero-direct-emission option where timing allows."
+    if option.get("mode") == "bus":
+        return "Tomorrow's route uses transit where the schedule allows, reducing carbon without creating a rushed morning."
+    return "This route keeps the fastest option visible while tracking the higher carbon impact."
 
 
 def _study_block(low_energy, study_heavy):
@@ -282,16 +512,17 @@ def _sustainability_blocks(dinner):
         ),
         _block(
             "block_plant_dinner_fri",
-            "Plant-forward dinner",
+            dinner.get("meal_name", "Plant-forward dinner"),
             "meal",
             "2026-05-01T18:30:00",
             "2026-05-01T19:15:00",
             dinner["dining_hall"],
-            "A second plant-forward dinner reinforces the lower-carbon dining pattern requested in the prompt.",
+            dinner.get("reason", "A second plant-forward dinner reinforces the lower-carbon dining pattern requested in the prompt."),
             {"time": 0.82, "health": dinner["scores"]["health"], "energy": dinner["scores"]["energy"], "sustainability": 0.95, "carbon": dinner["scores"]["carbon"]},
-            {"estimated_co2e_kg": dinner["carbon"]["estimated_co2e_kg"], "baseline_co2e_kg": 1.8, "delta_co2e_kg": -1.1, "category": "dining"},
+            _carbon_payload(dinner, 1.8),
             ["dining", "health", "energy", "sustainability_carbon"],
             ["ucla_dining_mock", "carbon_factors"],
+            _meal_extra(dinner, "dinner"),
         ),
         _block(
             "block_bike_study_sat",
@@ -318,6 +549,11 @@ def _sustainability_blocks(dinner):
             {"estimated_co2e_kg": 0.4, "baseline_co2e_kg": 1.5, "delta_co2e_kg": -1.1, "category": "dining"},
             ["dining", "health", "sustainability_carbon", "calendar"],
             ["carbon_factors", "local_planner"],
+            _static_balanced_meal_extra(
+                "Low-waste meal prep",
+                "dinner",
+                "Meal prep includes protein, grains, vegetables, fruit or fiber, and water so sustainability does not replace adequacy.",
+            ),
         ),
     ]
 
@@ -393,6 +629,7 @@ def _fitness_blocks():
             {"estimated_co2e_kg": 0.02, "baseline_co2e_kg": 0.02, "delta_co2e_kg": 0.0, "category": "health"},
             ["health", "energy", "calendar"],
             ["prompt_constraint", "local_planner"],
+            {"activity": {"name": "strength_session", "duration_minutes": 45, "calories_burned": 276, "intensity": "moderate", "method": "met_estimate_defaults"}},
         ),
         _block(
             "block_mobility_wed",
@@ -406,6 +643,7 @@ def _fitness_blocks():
             {"estimated_co2e_kg": 0.0, "baseline_co2e_kg": 0.02, "delta_co2e_kg": -0.02, "category": "health"},
             ["health", "energy", "calendar"],
             ["prompt_constraint", "local_planner"],
+            {"activity": {"name": "mobility_reset", "duration_minutes": 45, "calories_burned": 138, "intensity": "light", "method": "met_estimate_defaults"}},
         ),
         _block(
             "block_recovery_meal_fri",
@@ -419,6 +657,11 @@ def _fitness_blocks():
             {"estimated_co2e_kg": 0.7, "baseline_co2e_kg": 1.5, "delta_co2e_kg": -0.8, "category": "dining"},
             ["dining", "health", "energy", "calendar"],
             ["ucla_dining_mock", "local_planner"],
+            _static_balanced_meal_extra(
+                "Post-workout recovery meal",
+                "dinner",
+                "This recovery meal protects post-workout protein, carbohydrates, vegetables, and hydration before optimizing for carbon.",
+            ),
         ),
         _block(
             "block_active_recovery_sun",
@@ -432,6 +675,7 @@ def _fitness_blocks():
             {"estimated_co2e_kg": 0.0, "baseline_co2e_kg": 0.02, "delta_co2e_kg": -0.02, "category": "health"},
             ["health", "energy", "calendar", "transportation"],
             ["prompt_constraint", "local_planner"],
+            {"activity": {"name": "active_recovery", "duration_minutes": 40, "calories_burned": 154, "intensity": "light", "method": "met_estimate_defaults"}},
         ),
     ]
 
@@ -512,8 +756,8 @@ def _social_blocks():
     ]
 
 
-def _block(id, title, type, start, end, location, reason, scores, carbon, skills_used, data_sources):
-    return {
+def _block(id, title, type, start, end, location, reason, scores, carbon, skills_used, data_sources, extra=None):
+    block = {
         "id": id,
         "title": title,
         "type": type,
@@ -526,6 +770,9 @@ def _block(id, title, type, start, end, location, reason, scores, carbon, skills
         "skills_used": skills_used,
         "data_sources": data_sources,
     }
+    if extra:
+        block.update(extra)
+    return block
 
 
 def _planner_text(intent):

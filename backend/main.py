@@ -9,15 +9,19 @@ ROOT_DIR = BACKEND_DIR.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
 from config import load_local_env
+from agentverse_payload import compact_agentverse_response, normalize_agentverse_payload
 from food.food_store import load_dining_data
-from memory.memory_store import append_memory_update, read_memory
+from memory.memory_store import append_memory_update, read_memory, write_memory
 from planner.planner_provider import PlannerProvider
+from runtime_router import RuntimeRouter
+from runtime_status import agentverse_enabled, runtime_status
 
 
 HOST = "127.0.0.1"
 PORT = 8000
 load_local_env()
 PLANNER_PROVIDER = PlannerProvider()
+RUNTIME_ROUTER = RuntimeRouter(planner_provider=PLANNER_PROVIDER)
 
 
 class MatChalendarHandler(BaseHTTPRequestHandler):
@@ -45,6 +49,9 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
         if path == "/api/health":
             self._send_json({"status": "ok", "planner": "planner_provider"})
             return
+        if path == "/api/runtime/status":
+            self._send_json(runtime_status())
+            return
         if path == "/api/dining":
             self._send_json({"items": load_dining_data()})
             return
@@ -60,7 +67,7 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        if path not in ("/api/plan", "/api/memory/update"):
+        if path not in ("/api/plan", "/api/agentverse/plan", "/api/memory/update", "/api/memory/save"):
             self._send_json({"error": "not_found"}, status=404)
             return
 
@@ -73,7 +80,21 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/plan":
-            self._send_json(PLANNER_PROVIDER.plan(payload))
+            self._send_json(RUNTIME_ROUTER.plan(payload))
+            return
+
+        if path == "/api/agentverse/plan":
+            if not agentverse_enabled():
+                self._send_json({"error": "MatChalendar Agentverse demo is disabled."}, status=403)
+                return
+            planner_payload = normalize_agentverse_payload(payload)
+            plan = RUNTIME_ROUTER.plan(planner_payload)
+            self._send_json(compact_agentverse_response(plan))
+            return
+
+        if path == "/api/memory/save":
+            markdown = payload.get("memory", "")
+            self._send_json({"memory": write_memory(markdown), "saved": True})
             return
 
         markdown_patch = payload.get("markdown_patch", "")

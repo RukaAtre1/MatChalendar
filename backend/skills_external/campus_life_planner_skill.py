@@ -1,15 +1,15 @@
-from planner.planner_provider import PlannerProvider
+from runtime_router import RuntimeRouter
 
 
 class CampusLifePlannerSkill:
     name = "CampusLifePlannerSkill"
     description = "High-level MatChalendar skill for OmegaClaw campus life planning."
 
-    def __init__(self, planner_provider=None):
-        self.planner_provider = planner_provider or PlannerProvider()
+    def __init__(self, planner_provider=None, runtime_router=None):
+        self.runtime_router = runtime_router or RuntimeRouter(planner_provider=planner_provider)
 
     def run(self, prompt):
-        plan = self.planner_provider.plan({"prompt": prompt})
+        plan = self.runtime_router.plan({"prompt": prompt})
         return {
             "summary": plan.get("summary", ""),
             "generated_by": plan.get("generated_by", ""),

@@ -11,11 +11,11 @@
     <main class="app-shell">
       <header class="topbar">
         <div class="brand">
-          <h1>Mat<span class="gold">Cha</span>lendar</h1>
+          <h1><span class="accent">Mat</span><span class="gold">Cha</span>lendar</h1>
         </div>
         <div id="plannerBadge" class="local-badge" aria-label="Planner status">
           <span class="status-dot"></span>
-          Local AI climate planner
+          Health-first AI planner
         </div>
       </header>
 
@@ -33,7 +33,7 @@
           </section>
 
           <form id="plannerForm" class="goal-form">
-            <label for="promptInput">Climate goal</label>
+            <label for="promptInput">Planning goal</label>
             <textarea id="promptInput" rows="8">Plan my UCLA week to reduce emissions and waste. I had to take an Uber today, have class from 10 to 2, and need homework time tonight. Help me stay under my weekly carbon budget.</textarea>
             <button class="primary-button" type="submit">Run Planner</button>
             <ol id="compactTrace" class="compact-trace" hidden></ol>
@@ -49,7 +49,24 @@
               <button id="ignoreMemoryBtn" class="ghost-button" type="button">Ignore</button>
             </div>
           </section>
+
+          <div class="panel-footer">
+            <button id="openMemoryBtn" class="memory-open-button" type="button" aria-haspopup="dialog" aria-expanded="false">
+              Memory
+            </button>
+          </div>
         </aside>
+
+        <section id="memoryViewer" class="memory-viewer" role="dialog" aria-modal="false" aria-labelledby="memoryViewerTitle" hidden>
+          <div class="memory-viewer-heading">
+            <div>
+              <p class="kicker">Memory</p>
+              <h2 id="memoryViewerTitle">Saved Preferences</h2>
+            </div>
+            <button id="closeMemoryBtn" class="close-button" type="button" aria-label="Close memory">&times;</button>
+          </div>
+          <div id="memoryViewerContent" class="memory-viewer-content" aria-live="polite"></div>
+        </section>
 
         <section class="calendar-panel" aria-label="Weekly calendar">
           <div class="calendar-header">
@@ -68,15 +85,36 @@
             </div>
             <h2 id="blockTitle"></h2>
             <p id="blockMeta" class="block-meta"></p>
-
-            <section class="impact-card">
-              <p class="kicker">Climate impact</p>
-              <div class="impact-row"><span>Estimated footprint</span><strong id="carbonEstimate"></strong></div>
-            </section>
+            <div id="mealStatus" class="meal-status" hidden></div>
 
             <section id="menuSection" class="menu-section" hidden>
-              <p class="kicker">Menu</p>
+              <p class="kicker">Meal composition</p>
               <div id="menuSections" class="menu-sections"></div>
+            </section>
+
+            <section id="nutritionSection" class="detail-section" hidden>
+              <p class="kicker">Health fit</p>
+              <div id="nutritionDetails" class="metric-grid"></div>
+            </section>
+
+            <section id="impactCard" class="impact-card">
+              <p class="kicker">Climate impact</p>
+              <div id="climateDetails"></div>
+            </section>
+
+            <section id="whySection" class="detail-section" hidden>
+              <p class="kicker">Why this meal</p>
+              <p id="whyDetails"></p>
+            </section>
+
+            <section id="activitySection" class="detail-section" hidden>
+              <p class="kicker">Activity</p>
+              <div id="activityDetails" class="metric-grid"></div>
+            </section>
+
+            <section id="transportSection" class="detail-section" hidden>
+              <p class="kicker">Transportation</p>
+              <div id="transportDetails" class="metric-grid"></div>
             </section>
 
             <section id="choicesSection" class="choices-section" hidden>
