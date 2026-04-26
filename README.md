@@ -1,28 +1,218 @@
 # MatChalendar
 
-**Local-first AI campus planner** - a one-screen weekly planner for UCLA daily life.
+**A sustainability-aware AI life planner that turns chaotic student weeks into executable calendar plans.**
 
-MatChalendar turns a natural-language student goal into an explainable weekly calendar across class time, homework, dining, recovery, transportation, and carbon goals. The current MVP keeps a deterministic demo path, but now routes planning through a provider layer that uses ASI:One hosted AI first and falls back safely when AI is unavailable.
+MatChalendar is a full-stack AI planning project built for student life at UCLA. A student gives one natural-language goal, and the system returns a structured weekly plan across classes, homework, dining, health, recovery, transportation, energy, and carbon goals.
 
-![MatChalendar status](https://img.shields.io/badge/status-api_ready_mvp-2c4a2e?style=flat-square)
+The product is not just a calendar UI and not just a chatbot. It is a planner-orchestrator:
 
-## Fetch.ai / Agentverse Deliverables
+```text
+Master AI Planner + Specialist Skills + Food Data Intelligence + Carbon-aware Calendar Replanning
+```
+
+Core design principle:
+
+```text
+Skills propose. Planner decides. Calendar renders.
+```
+
+## Demo Prompt
+
+Try this prompt in the one-screen demo or through `POST /api/plan`:
+
+```text
+Plan my UCLA week around sustainability. I prefer vegetarian meals, walking, transit, and focused study blocks. I have class from 10 to 2 and homework tonight.
+```
+
+MatChalendar should produce visibly different plans for sustainability, recovery, homework, and group-project prompts. The response includes an explanation, calendar blocks, skill traces, carbon budget estimates, and planner metadata.
+
+## What It Does
+
+- Converts messy natural-language student goals into validated weekly calendar blocks.
+- Plans across academics, dining, health, energy, transportation, recovery, and sustainability.
+- Uses specialist skills to propose recommendations, constraints, scores, and evidence.
+- Runs a backend-owned calendar replanning step so final `plan_blocks` are validated and executable.
+- Estimates carbon impact for meals and transportation choices without claiming exact real-world accounting precision.
+- Provides a stable deterministic fallback when hosted AI, Agentverse, or a remote runtime is unavailable.
+- Supports a local-first backend runtime that can be deployed on an ASUS Ascent GX10 and accessed over a LAN or tailnet.
+- Exposes an Agentverse / ASI:One path so users can ask `@matchalendar` for a plan from ASI:One.
+
+## Architecture Overview
+
+```text
+User prompt
+  -> PlannerProvider
+  -> ASI:One AIPlannerContext or deterministic fallback
+  -> intent normalization
+  -> specialist skill router
+  -> calendar replanner and validator
+  -> PlanResponse
+  -> web UI or Agentverse response
+```
+
+The hosted AI layer is intentionally constrained. ASI:One returns structured planning context only:
+
+- `goals`
+- `constraints`
+- `priority_order`
+- `selected_skills`
+- `tradeoffs`
+- `explanation_draft`
+- `confidence`
+
+The backend planner owns the final calendar generation, validation, metadata, fallback behavior, and `PlanResponse` shape. This keeps the system explainable and demo-stable: AI can guide the plan, but it does not directly overwrite the calendar.
+
+## Specialist Skills
+
+MatChalendar includes internal specialist skills under `backend/skills/`:
+
+- `calendar_skill.py`: schedule constraints and class-aware time windows.
+- `study_skill.py`: focused study sprints, assignment buffers, and academic planning.
+- `dining_skill.py`: UCLA dining recommendations from local menu data or mock fallback data.
+- `health_skill.py`: recovery, sleep, and wellness-aware planning.
+- `energy_skill.py`: low-energy and high-focus block placement.
+- `transportation_skill.py`: walking, biking, transit, and trip-mode recommendations.
+- `sustainability_carbon_skill.py`: carbon budget estimates and low-impact alternatives.
+- `explanation_skill.py`: concise reasoning for the final plan.
+
+Skills return options, constraints, evidence, and scores. They do not own final placement. The planner compares those proposals and the calendar renderer turns decisions into blocks.
+
+## Carbon-Aware Replanning
+
+MatChalendar treats sustainability as a scheduling constraint, not an afterthought. The planner can adapt blocks for prompts about vegetarian meals, transit, walking, biking, low-waste groceries, and recovery after higher-carbon choices such as an emergency ride.
+
+The carbon features are designed for useful relative planning:
+
+- Food estimates are grounded in local dining data and ingredient/category heuristics.
+- Transportation estimates compare lower-impact options such as walking, biking, and transit.
+- The UI surfaces a carbon budget, estimated impact, percent used, and relevant skill traces.
+- The system avoids claiming exact certified emissions accounting.
+
+Refresh the local UCLA Dining cache before a dining-heavy demo:
+
+```bash
+python backend/food/food_data_pipeline.py --days 7
+```
+
+If the live cache is missing or malformed, the planner falls back to `backend/data/dining_mock.json`.
+
+## Agentverse / ASI:One Integration
 
 MatChalendar is registered as an Agentverse Chat Protocol agent and can be invoked from ASI:One.
 
-**Agent name:** MatChalendar Campus Planner Agent  
-**Agent handle:** @matchalendar
+```text
+Agent name:   MatChalendar Campus Planner Agent
+Agent handle: @matchalendar
+```
 
-**Agentverse Agent Profile:**  
-https://agentverse.ai/agents/details/agent1qgckjr38ks3wflddkzw3rh0ynf64z4uv2ec9axmcm40pwnr9jz7rcs5kmta/profile
+- Agentverse Profile: https://agentverse.ai/agents/details/agent1qgckjr38ks3wflddkzw3rh0ynf64z4uv2ec9axmcm40pwnr9jz7rcs5kmta/profile
+- ASI:One Shared Chat: https://asi1.ai/invite?channelInviteKey=MK7fcyyuh87kQxz0dtADv7U9apOLYt91VXMCTKtjXr8
 
-**ASI:One Chat Session / Invite Link:**  
-https://asi1.ai/invite?channelInviteKey=MK7fcyyuh87kQxz0dtADv7U9apOLYt91VXMCTKtjXr8
+Agentverse flow:
 
-**Agentverse flow:**  
-A user asks ASI:One to use @matchalendar. ASI:One invokes the Agentverse agent. The agent calls the MatChalendar backend planner and returns an explainable weekly calendar plan with carbon-aware replanning.
+```text
+ASI:One
+  -> @matchalendar Agentverse agent
+  -> MatChalendar backend planner
+  -> specialist skills
+  -> structured calendar response
+  -> ASI:One answer
+```
 
-## Quick Start
+Relevant files:
+
+- `agentverse/matchalendar_agent.py`
+- `backend/agentverse_payload.py`
+- `backend/integrations/asi_one.py`
+- `backend/planner/planner_provider.py`
+
+Run the Agentverse agent locally after starting the backend:
+
+```powershell
+python -m pip install uagents
+python agentverse\matchalendar_agent.py
+```
+
+Point the agent at a GX10 or public backend:
+
+```powershell
+$env:MATCHALENDAR_BACKEND_URL="http://<gx10-or-public-backend>:8000"
+python agentverse\matchalendar_agent.py
+```
+
+Do not commit API keys, seed phrases, ngrok URLs with secrets, or `.env.local`.
+
+## ASUS GX10 Local-First Runtime
+
+MatChalendar includes a local-first backend/planner runtime designed to run on the ASUS Ascent GX10. Sensitive student context such as class schedules, dining preferences, health routines, transportation choices, energy patterns, and carbon goals can be processed through a local backend deployed on the GX10 and accessed over a local network or tailnet.
+
+This project does not claim completed local model inference on GX10 unless an OpenAI-compatible local model endpoint is explicitly configured. The current GX10 path focuses on running the planner backend locally, exposing runtime status, supporting LAN/tailnet access, and keeping deterministic fallback available for demo stability when external AI services are unavailable.
+
+Run on GX10:
+
+```bash
+cd /home/asus/MatChalendar
+bash scripts/start_backend_gx10.sh
+```
+
+The GX10 startup script creates `.venv` if needed, installs `requirements.txt`, binds the backend to `0.0.0.0:8000`, and serves the one-screen demo at:
+
+```text
+http://<gx10-ip>:8000
+```
+
+Health and runtime checks:
+
+```bash
+curl http://127.0.0.1:8000/api/health
+curl http://127.0.0.1:8000/api/runtime/status
+```
+
+Useful GX10 environment variables:
+
+```bash
+export MATCHALENDAR_HOST=0.0.0.0
+export MATCHALENDAR_PORT=8000
+export USE_GX10_RUNTIME=false
+export RUNTIME_FAILOVER_ENABLED=true
+python backend/main.py
+```
+
+To route a local frontend/backend through a GX10 backend:
+
+```powershell
+$env:USE_GX10_RUNTIME="true"
+$env:GX10_BACKEND_URL="http://<gx10-ip>:8000"
+$env:LOCAL_BACKEND_URL="http://127.0.0.1:8000"
+$env:RUNTIME_FAILOVER_ENABLED="true"
+$env:RUNTIME_ROUTER_TIMEOUT_SECONDS="8"
+python backend\main.py
+```
+
+The runtime status response includes `runtime_mode`, `backend_url`, `gx10_enabled`, `gx10_available`, `local_first`, `fallback_enabled`, `backend_label`, `agentverse_enabled`, and `asi_one_enabled`.
+
+## Figma Make Design Process
+
+Figma Make was used to prototype and iterate on the explanation drawer and visual hierarchy for AI reasoning, carbon impact, and skill traces. That design work shaped the one-screen demo around judge-readable information:
+
+- A goal input and chat-style control area.
+- A weekly calendar with concrete blocks.
+- A concise planner badge instead of verbose internal metadata.
+- A carbon budget card with number, target, percent, and meter.
+- An explanation drawer that shows why the plan changed.
+- Skill traces that make the orchestration visible without overwhelming the main UI.
+
+## Tech Stack
+
+- Frontend: HTML, CSS, vanilla JavaScript.
+- Backend: Python `http.server` with a custom JSON API.
+- Planner: provider layer, AI context normalization, deterministic fallback, skill router, calendar replanner, validation.
+- AI integration: ASI:One OpenAI-compatible API adapter.
+- Agent integration: Fetch.ai Agentverse / uAgents Chat Protocol.
+- Local runtime: ASUS GX10 deployable backend path with runtime routing and fallback.
+- Data: local UCLA dining cache, mock dining fallback, carbon factor data, memory files.
+
+## Local Setup
 
 Run the API and static demo from the project root:
 
@@ -30,129 +220,144 @@ Run the API and static demo from the project root:
 python backend/main.py
 ```
 
-On Windows PowerShell:
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+Windows PowerShell:
 
 ```powershell
 cd C:\Users\12392\Desktop\MatChalendar
 python backend\main.py
 ```
 
-Or use the Windows startup script from the project root:
+Or:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\start_backend.ps1
 ```
 
-Then open [http://127.0.0.1:8000](http://127.0.0.1:8000).
+Linux / macOS:
 
-You can still open `index.html` directly. In that mode, Run Planner attempts `POST http://127.0.0.1:8000/api/plan`; if the backend is unavailable, the frontend uses its local mock PlanResponse fallback.
+```bash
+bash scripts/start_backend.sh
+```
 
-Useful local endpoints:
+GX10 / LAN mode:
+
+```bash
+cd /home/asus/MatChalendar
+bash scripts/start_backend_gx10.sh
+```
+
+Optional ASI:One setup:
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill local values in `.env.local`:
 
 ```text
-http://127.0.0.1:8000/api/health
-http://127.0.0.1:8000/api/runtime/status
-http://127.0.0.1:8000/api/agentverse/plan
+USE_ASI_ONE=true
+ASI_ONE_API_KEY=
+ASI_ONE_BASE_URL=https://api.asi1.ai/v1
+ASI_ONE_MODEL=asi1
+ASI_ONE_TIMEOUT_SECONDS=20
 ```
 
-## ASUS GX10 / Local-first Runtime
+`.env.local` is ignored by git and must not be committed.
 
-MatChalendar includes a GX10/local-first runtime path for private, low-latency student planning. The normal local demo runs at `http://127.0.0.1:8000`; the same backend can be started on an ASUS Ascent GX10 and exposed on the LAN or tailnet, for example `http://100.121.103.97:8000`.
-
-Run the local backend from PowerShell:
-
-```powershell
-python backend/main.py
-```
-
-Run the backend on GX10 by copying the project to the GX10, configuring `.env.local` on that machine, and starting the same backend command there:
-
-```powershell
-$env:USE_GX10_RUNTIME="false"
-$env:LOCAL_BACKEND_URL="http://100.121.103.97:8000"
-python backend/main.py
-```
-
-To point a local frontend/router at the GX10 backend, set these values in `.env.local` or in the current PowerShell session before starting the local backend:
-
-```powershell
-$env:USE_GX10_RUNTIME="true"
-$env:GX10_BACKEND_URL="http://100.121.103.97:8000"
-$env:LOCAL_BACKEND_URL="http://127.0.0.1:8000"
-$env:RUNTIME_FAILOVER_ENABLED="true"
-$env:RUNTIME_ROUTER_TIMEOUT_SECONDS="8"
-python backend/main.py
-```
-
-When the frontend is opened from a backend origin, it calls that same origin by default. You can also override the planner API before `app.js` loads by setting `window.MATCHALENDAR_API_URL` to a URL such as `http://100.121.103.97:8000/api/plan`.
-
-Verify runtime status:
-
-```powershell
-curl.exe http://127.0.0.1:8000/api/runtime/status
-```
-
-Verify planning:
-
-```powershell
-$body = @{
-  prompt = "Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight."
-} | ConvertTo-Json
-
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/plan" -Method POST -ContentType "application/json" -Body $body
-```
-
-The `/api/runtime/status` response includes `runtime_mode`, `backend_url`, `gx10_enabled`, `gx10_available`, `local_first`, `fallback_enabled`, `backend_label`, `agentverse_enabled`, and `asi_one_enabled`. If the GX10 URL is unreachable while `USE_GX10_RUNTIME=true`, the status reports `gx10_available=false` and the router can continue through deterministic fallback when `RUNTIME_FAILOVER_ENABLED=true`.
-
-For ASUS challenge evidence, capture screenshots of:
-
-- The frontend badge/card showing `ASUS GX10 / Local-first runtime`, runtime mode, GX10 availability, fallback status, and backend label.
-- `curl.exe http://127.0.0.1:8000/api/runtime/status` in PowerShell.
-- A successful `/api/plan` response using the demo prompt.
-- `scripts/asus_gx10_evidence.ps1` output.
-- If available, the same status page or frontend served from `http://100.121.103.97:8000`.
-
-### Devpost ASUS Challenge Note
-
-MatChalendar was built with a GX10/local-first runtime path for private student planning. The backend exposes a runtime router and status endpoint so the planner can run against an ASUS Ascent GX10 backend when available, while keeping a deterministic fallback for demo stability. This supports low-latency planning over sensitive student context such as schedules, dining preferences, health routines, transportation choices, and carbon goals.
-
-Submission links:
+## API Endpoints
 
 ```text
-Agentverse Profile URL: https://agentverse.ai/agents/details/agent1qgckjr38ks3wflddkzw3rh0ynf64z4uv2ec9axmcm40pwnr9jz7rcs5kmta/profile
-ASI:One Shared Chat URL: https://asi1.ai/invite?channelInviteKey=MK7fcyyuh87kQxz0dtADv7U9apOLYt91VXMCTKtjXr8
-```
-
-## API
-
-```text
+GET  /api/health
+GET  /api/runtime/status
+GET  /api/dining
+GET  /api/demo-schedule
+GET  /api/memory
 POST /api/plan
 POST /api/agentverse/plan
 POST /api/memory/update
-GET /api/memory
-GET /api/dining
-GET /api/demo-schedule
-GET /api/health
-GET /api/runtime/status
+POST /api/memory/save
 ```
 
-## UCLA Dining Cache
+The frontend calls `POST /api/plan`. If the backend is unavailable while `index.html` is opened directly, the frontend can fall back to a local mock response for demo continuity.
 
-Refresh the local UCLA Dining knowledge base before running a dining-aware demo:
+## Example Request / Response Shape
 
-```bash
-python backend/food/food_data_pipeline.py --days 7
-```
-
-The scraper reads UCLA Dining's official menu and menu-item nutrition pages, writes an ignored local cache under `backend/data/dining_cache/`, and the planner falls back to `dining_mock.json` if that cache is missing or malformed. ASI:One only receives the user's planning intent; full menu records stay in the backend cache and are retrieved by internal skills.
-
-Example:
+Request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/plan \
   -H "Content-Type: application/json" \
-  -d "{\"prompt\":\"Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.\"}"
+  -d "{\"prompt\":\"Plan my UCLA week around sustainability. I prefer vegetarian meals, walking, transit, and focused study blocks.\"}"
 ```
+
+PowerShell:
+
+```powershell
+$body = @{
+  prompt = "Plan my UCLA week around sustainability. I prefer vegetarian meals, walking, transit, and focused study blocks."
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/plan" -Method POST -ContentType "application/json" -Body $body -TimeoutSec 30
+```
+
+Response shape:
+
+```json
+{
+  "summary": "A concise explanation of the weekly plan.",
+  "generated_by": "asi_one_ai_assisted_planner",
+  "metadata": {
+    "planner_mode": "asi_one_hosted_ai",
+    "integrations_used": ["asi_one"],
+    "fallback_reason": "",
+    "memory_used": true,
+    "soul_used": true
+  },
+  "intent": {
+    "primary_goal": "sustainability-aware weekly planning"
+  },
+  "understanding": {
+    "goals": [],
+    "constraints": []
+  },
+  "carbon_budget": {
+    "target_kg": 20,
+    "estimated_kg": 0,
+    "percent_used": 0
+  },
+  "plan_blocks": [
+    {
+      "id": "block-1",
+      "title": "Focused study sprint",
+      "type": "study",
+      "start": "2026-04-27T18:00:00",
+      "end": "2026-04-27T19:30:00",
+      "reason": "Why this block belongs here.",
+      "scores": {
+        "academic": 0.9,
+        "carbon": 0.8
+      },
+      "skills_used": ["study", "calendar"]
+    }
+  ],
+  "skills_used": ["study", "dining", "transportation", "sustainability_carbon"]
+}
+```
+
+When ASI:One is configured successfully, expected metadata includes:
+
+```text
+metadata.planner_mode = "asi_one_hosted_ai"
+metadata.integrations_used includes "asi_one"
+```
+
+When ASI:One is disabled, invalid, unavailable, times out, or returns malformed JSON, the backend returns a valid deterministic fallback plan.
 
 ## Project Structure
 
@@ -161,16 +366,23 @@ MatChalendar/
 |-- index.html
 |-- styles.css
 |-- app.js
-|-- matcalendar-demo.html
-|-- PRD_MatChalendar.md
 |-- README.md
+|-- requirements.txt
+|-- scripts/
+|   |-- start_backend.ps1
+|   |-- start_backend.sh
+|   |-- start_backend_gx10.sh
+|   `-- asus_gx10_evidence.ps1
+|-- agentverse/
+|   `-- matchalendar_agent.py
 `-- backend/
     |-- main.py
-    |-- agents/
-    |   `-- campus_life_planner_agent.py
+    |-- runtime_router.py
+    |-- runtime_status.py
+    |-- agentverse_payload.py
     |-- integrations/
-    |   |-- local_ai.py
-    |   `-- asi_one.py
+    |   |-- asi_one.py
+    |   `-- local_ai.py
     |-- memory/
     |   |-- SOUL.md
     |   |-- MEMORY.md
@@ -179,7 +391,6 @@ MatChalendar/
     |   |-- planner_provider.py
     |   |-- ai_master_planner.py
     |   |-- fallback_planner.py
-    |   |-- master_planner.py
     |   |-- intent_parser.py
     |   |-- skill_router.py
     |   |-- calendar_replanner.py
@@ -193,8 +404,6 @@ MatChalendar/
     |   |-- transportation_skill.py
     |   |-- sustainability_carbon_skill.py
     |   `-- explanation_skill.py
-    |-- skills_external/
-    |   `-- campus_life_planner_skill.py
     |-- food/
     |   |-- food_data_pipeline.py
     |   |-- nutrition_estimator.py
@@ -206,192 +415,64 @@ MatChalendar/
         `-- carbon_factors.json
 ```
 
-## Planner Flow
+## Track Alignment
 
-```text
-user prompt -> PlannerProvider -> ASI:One AIPlannerContext -> internal skills -> calendar replanner validation -> PlanResponse
-```
+### LA Hacks / Devpost
 
-If ASI:One is disabled or unavailable, the provider safely falls back to `fallback_planner.py`. Skills return recommendations, constraints, scores, and evidence; the planner pipeline owns the final calendar output. GX10 local AI remains an optional future provider and is disabled by default until a concrete model endpoint exists.
+- Meaningful student problem: turns overloaded campus life into concrete plans.
+- Full-stack execution: working frontend, backend API, planner pipeline, skills, data, and integrations.
+- User-centered design: one-screen workflow with planner explanation, carbon budget, and skill traces.
+- Originality: combines AI planning, campus food intelligence, carbon-aware replanning, and Agentverse access.
 
-## AI and Memory
+### Fetch.ai / Agentverse
 
-Planner source order:
+- Registered Agentverse agent with ASI:One shared chat.
+- Agent turns chat requests into structured backend planner calls.
+- Response includes calendar blocks, carbon adjustments, skills used, and runtime context.
 
-```text
-ASI:One hosted AI -> deterministic fallback
-```
+### ASUS Hardware Challenge
 
-Environment variables:
+- Backend/planner runtime can be deployed on ASUS Ascent GX10.
+- Supports local/tailnet access for low-latency planning over sensitive student context.
+- Includes deterministic fallback for stable demos if external AI services are unavailable.
+- Does not overclaim local model inference unless a concrete local model endpoint is configured.
 
-```text
-USE_ASI_ONE=true
-ASI_ONE_API_KEY=
-ASI_ONE_BASE_URL=https://api.asi1.ai/v1
-ASI_ONE_MODEL=asi1
-ASI_ONE_TIMEOUT_SECONDS=20
+## Known Limitations
 
-USE_LOCAL_AI=false
-LOCAL_AI_PROVIDER=openai_compatible
-LOCAL_AI_BASE_URL=
-LOCAL_AI_API_KEY=
-LOCAL_MODEL_NAME=
-LOCAL_AI_TIMEOUT_SECONDS=20
+- Carbon estimates are practical planning heuristics, not audited emissions calculations.
+- GX10 local model inference is optional future configuration through `backend/integrations/local_ai.py`; current submission should only claim local backend/runtime deployment unless a model endpoint is actually running.
+- The current backend uses Python's built-in HTTP server for hackathon simplicity rather than FastAPI or a production WSGI/ASGI deployment.
+- Dining data depends on a local cache or mock fallback when live UCLA Dining scraping is unavailable.
+- Calendar conflict resolution is deterministic and can be improved for dense, real student calendars.
 
-USE_GX10_RUNTIME=false
-GX10_BACKEND_URL=http://100.121.103.97:8000
-LOCAL_BACKEND_URL=http://127.0.0.1:8000
-RUNTIME_FAILOVER_ENABLED=true
-AGENTVERSE_AGENT_ENABLED=false
-RUNTIME_ROUTER_TIMEOUT_SECONDS=8
+## Future Work
 
-MATCHALENDAR_BACKEND_URL=http://127.0.0.1:8000
-AGENT_NAME=MatChalendar Campus Planner Agent
-AGENT_SEED_PHRASE=replace_with_secure_seed
-AGENT_ENDPOINT=https://replace-with-current-ngrok-host
-AGENTVERSE_KEY=replace_if_needed
-ASI1_API_KEY=replace_if_needed
-AGENTVERSE_API_KEY=replace_if_needed
-```
+- Make calendar generation more deeply AI-guided while preserving backend validation.
+- Add stronger conflict resolution when multiple prompt-derived blocks compete for the same time.
+- Connect a real local OpenAI-compatible model endpoint on GX10 for private local inference.
+- Expand dining data freshness, nutrition modeling, and sustainability scoring.
+- Add more tests for provider fallback, AI context normalization, and prompt-adaptive variants.
+- Move to FastAPI if it improves demo reliability, deployment, or integration ergonomics.
+- Add calendar export and optional integration with real calendar providers.
 
-For local setup, copy `.env.example` to `.env.local`, fill in your ASI:One key, and run `python backend/main.py`. Do not commit `.env.local` or any API keys. `.env.local` contains local-only secrets such as ASI:One and Agentverse API keys. `.env.local` is ignored by git and must not be committed. In PowerShell, you can also set session variables directly:
+## Verification
+
+Recommended checks before demoing:
 
 ```powershell
-$env:USE_ASI_ONE="true"
-$env:ASI_ONE_API_KEY="<your-key>"
-$env:ASI_ONE_BASE_URL="https://api.asi1.ai/v1"
-$env:ASI_ONE_MODEL="asi1"
-$env:ASI_ONE_TIMEOUT_SECONDS="20"
+python -m compileall backend
+node --check app.js
+Invoke-RestMethod -Uri http://127.0.0.1:8000/api/health -Method Get
 ```
 
-`SOUL.md` defines MatChalendar's product identity. `MEMORY.md` stores approved long-term preferences. `/api/plan` includes both in AI planner context and returns a `memory_update_suggestion` when useful. The frontend can save approved suggestions through `/api/memory/update`.
-
-## Frontend
-
-The one-screen demo preserves:
-
-- left goal input / chat-style control panel
-- right weekly calendar
-- explanation drawer
-- carbon budget card
-- skills used trace
-- generated_by / planner_mode badge
-- memory update suggestion card
-- local fallback PlanResponse
-
-## Agentverse
-
-MatChalendar includes a Fetch.ai uAgents Chat Protocol agent:
-
-```text
-agentverse/matchalendar_agent.py
-```
-
-The agent name is `MatChalendar Campus Planner Agent`. It reads `MATCHALENDAR_BACKEND_URL`, defaults to `http://127.0.0.1:8000`, calls `POST /api/plan`, and formats the backend plan as a concise chat response with a summary, calendar blocks, carbon adjustment, skills used, and local-first / GX10 runtime note. If the backend is unavailable, it returns a deterministic demo plan.
-
-Install the Agentverse dependency:
+Useful smoke test:
 
 ```powershell
-python -m pip install uagents
-```
+$body = @{
+  prompt = "Plan my UCLA week around sustainability. I prefer vegetarian meals, walking, transit, and focused study blocks."
+} | ConvertTo-Json
 
-Run the backend:
-
-```powershell
-cd C:\Users\12392\Desktop\MatChalendar
-python backend\main.py
-```
-
-Run the Agentverse agent in a second terminal:
-
-```powershell
-cd C:\Users\12392\Desktop\MatChalendar
-python agentverse\matchalendar_agent.py
-```
-
-Expected terminal output includes an agent address beginning with:
-
-```text
-agent1...
-```
-
-To point the agent at a GX10 or public backend:
-
-```powershell
-$env:MATCHALENDAR_BACKEND_URL="http://<gx10-or-public-backend>:8000"
-python agentverse\matchalendar_agent.py
-```
-
-For Agentverse External Integration through ngrok, set `AGENT_ENDPOINT` to the ngrok base URL without `/submit`:
-
-```powershell
-$env:AGENT_ENDPOINT="https://swaddling-autopilot-chaperone.ngrok-free.dev"
-python agentverse\matchalendar_agent.py
-```
-
-Register this webhook URL in Agentverse:
-
-```text
-${AGENT_ENDPOINT}/submit
-```
-
-Register on Agentverse:
-
-1. Start the backend and `agentverse/matchalendar_agent.py`.
-2. Open the Agentverse inspector or registration flow shown in the uAgents startup logs.
-3. Register the running uAgent as `MatChalendar Campus Planner Agent`.
-4. Use this description: `A campus-life planning agent that turns a student's natural language request into an explainable weekly calendar across classes, homework, dining, health, energy, transportation, and carbon impact.`
-5. Paste the final profile link into the placeholders below.
-
-```text
-Agentverse Profile URL: TBD
-ASI:One Shared Chat URL: TBD
-```
-
-Test from ASI:One by asking it to use the MatChalendar Campus Planner Agent with this prompt:
-
-```text
-Plan my UCLA week. I want to reduce carbon emissions, but I had an emergency and took an Uber today. I also have class from 10 to 2 and homework tonight.
-```
-
-Expected output:
-
-- summary of the weekly plan
-- calendar blocks for class, homework, meals, recovery, and low-carbon transportation
-- carbon adjustment after the emergency Uber
-- skills used
-- local-first / GX10 runtime note if available
-
-## Integration Points
-
-- ASI:One: `backend/integrations/asi_one.py` hosted planner reasoning adapter.
-- ASUS GX10: `backend/integrations/local_ai.py` OpenAI-compatible adapter, disabled until configured.
-- Runtime router: `backend/runtime_router.py` lets Agentverse/Python entrypoints try GX10 first and fall back to the in-process local planner.
-- Agentverse: `POST /api/agentverse/plan` returns a compact structured plan when `AGENTVERSE_AGENT_ENABLED=true`.
-- OmegaClaw: `CampusLifePlannerSkill` exposes MatChalendar as one high-level skill through the same runtime router.
-
-See `docs/gx10-agentverse-runtime.md` for GX10, public tunnel, Agentverse registration, and post-hackathon disable steps.
-
-## Troubleshooting
-
-If Python reports that `backend/main.py` is not found, you are not in the project root. Start from:
-
-```powershell
-cd C:\Users\12392\Desktop\MatChalendar
-python backend\main.py
-```
-
-Or run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\start_backend.ps1
-```
-
-If port 8000 is already occupied on Windows, find and stop the process:
-
-```powershell
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
+Invoke-RestMethod -Uri http://127.0.0.1:8000/api/plan -Method Post -ContentType "application/json" -Body $body -TimeoutSec 30
 ```
 
 Built for LA Hacks 2026.

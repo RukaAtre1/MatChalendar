@@ -11,10 +11,14 @@ if (Test-Path ".env.local") {
     Write-Host "Found .env.local; backend/config.py will load it."
 }
 
+$hostName = if ($env:MATCHALENDAR_HOST) { $env:MATCHALENDAR_HOST } else { "127.0.0.1" }
+$port = if ($env:MATCHALENDAR_PORT) { $env:MATCHALENDAR_PORT } else { "8000" }
+
 Write-Host "Starting MatChalendar backend from $ProjectRoot"
-Write-Host "Health:         http://127.0.0.1:8000/api/health"
-Write-Host "Runtime status: http://127.0.0.1:8000/api/runtime/status"
-Write-Host "Agentverse:     http://127.0.0.1:8000/api/agentverse/plan"
+Write-Host "Bind address:   ${hostName}:${port}"
+Write-Host "Health:         http://127.0.0.1:${port}/api/health"
+Write-Host "Runtime status: http://127.0.0.1:${port}/api/runtime/status"
+Write-Host "Agentverse:     http://127.0.0.1:${port}/api/agentverse/plan"
 Write-Host ""
 
 python backend\main.py

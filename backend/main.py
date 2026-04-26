@@ -1,5 +1,6 @@
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import sys
 from urllib.parse import urlparse
@@ -17,9 +18,24 @@ from runtime_router import RuntimeRouter
 from runtime_status import agentverse_enabled, runtime_status
 
 
-HOST = "127.0.0.1"
-PORT = 8000
 load_local_env()
+
+
+def _server_host():
+    return os.getenv("MATCHALENDAR_HOST", "127.0.0.1").strip() or "127.0.0.1"
+
+
+def _server_port():
+    raw_port = os.getenv("MATCHALENDAR_PORT", "8000").strip()
+    try:
+        return int(raw_port)
+    except ValueError:
+        print(f"Invalid MATCHALENDAR_PORT={raw_port!r}; using 8000.")
+        return 8000
+
+
+HOST = _server_host()
+PORT = _server_port()
 PLANNER_PROVIDER = PlannerProvider()
 RUNTIME_ROUTER = RuntimeRouter(planner_provider=PLANNER_PROVIDER)
 
@@ -133,5 +149,8 @@ class MatChalendarHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server = ThreadingHTTPServer((HOST, PORT), MatChalendarHandler)
     print(f"MatChalendar API running at http://{HOST}:{PORT}")
-    print("Open http://127.0.0.1:8000 to use the one-screen demo.")
+    if HOST == "0.0.0.0":
+        print(f"Open http://<this-machine-ip>:{PORT} from another device on the same network.")
+    else:
+        print(f"Open http://{HOST}:{PORT} to use the one-screen demo.")
     server.serve_forever()

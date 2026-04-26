@@ -1,0 +1,2 @@
+# Core MatChalendar demo uses only the Python standard library.
+# This file exists so `python -m pip install -r requirements.txt` succeeds on new machines.
