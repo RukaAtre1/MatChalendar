@@ -287,6 +287,11 @@ const fallbackPlanResponse = {
   ]
 };
 
+const initialCarbonBudget = {
+  weekly_target_kg_co2e: 35.0,
+  current_estimated_kg_co2e: 0
+};
+
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const startHour = 8;
 const endHour = 24;
@@ -556,7 +561,7 @@ function renderCarbonBudget(budget) {
   const meter = document.querySelector("#carbonMeter");
   const budgetLevel = carbonBudgetLevel(current, target);
 
-  document.querySelector("#carbonCurrent").textContent = current.toFixed(1);
+  document.querySelector("#carbonCurrent").textContent = current === 0 ? "0" : current.toFixed(1);
   document.querySelector("#carbonTarget").textContent = `/ ${formatKg(target)} kg CO2e`;
   document.querySelector("#carbonPercent").textContent = `${percent}%`;
   meter.style.width = `${percent}%`;
@@ -1433,6 +1438,6 @@ openMemoryBtn.addEventListener("click", () => {
 closeMemoryBtn.addEventListener("click", closeMemoryViewer);
 
 renderCalendar([]);
-renderCarbonBudget(fallbackPlanResponse.carbon_budget);
+renderCarbonBudget(initialCarbonBudget);
 renderPlannerMetadata(fallbackPlanResponse);
 clearSelection();
