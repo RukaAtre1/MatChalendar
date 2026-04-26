@@ -8,8 +8,6 @@ const plannerSteps = [
   "Rendering PlanResponse"
 ];
 
-const defaultPlanTitle = "Carbon-aware UCLA week ready.";
-
 const plannerRequestTimeoutMs = 30000;
 
 const skillLabels = {
@@ -299,7 +297,6 @@ const form = document.querySelector("#plannerForm");
 const trace = document.querySelector("#compactTrace");
 const workspace = document.querySelector(".workspace");
 const calendarGrid = document.querySelector("#calendarGrid");
-const planSummary = document.querySelector("#planSummary");
 const regenerateBtn = document.querySelector("#regenerateBtn");
 const detailDrawer = document.querySelector(".detail-drawer");
 const drawerEmpty = document.querySelector("#drawerEmpty");
@@ -412,18 +409,9 @@ function applyPlan(plan) {
   renderCarbonBudget(plan.carbon_budget);
   renderPlannerMetadata(plan);
   renderMemorySuggestion(plan.memory_update_suggestion);
-  planSummary.textContent = displayPlanTitle(plan);
   const executionSteps = buildExecutionSteps(plan);
   renderTrace(executionSteps.length - 1, true, executionSteps);
   clearSelection();
-}
-
-function displayPlanTitle(plan) {
-  const goal = String(plan.intent?.primary_goal || "").toLowerCase();
-  if (goal.includes("study") || goal.includes("homework")) return "Focused study week ready.";
-  if (goal.includes("recovery") || goal.includes("energy")) return "Balanced recovery week ready.";
-  if (goal.includes("carbon") || goal.includes("sustain")) return defaultPlanTitle;
-  return "Weekly campus plan ready.";
 }
 
 function buildExecutionSteps(plan) {
@@ -668,7 +656,6 @@ function clearSelection() {
 async function runPlanner() {
   clearSelection();
   renderCalendar([]);
-  planSummary.textContent = "Planning in progress...";
   renderTrace(0);
 
   const planPromise = requestPlan(promptInput.value).catch((error) => ({

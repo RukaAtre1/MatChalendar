@@ -78,15 +78,6 @@ button { cursor: pointer; }
   gap: 2px;
 }
 
-.mood-text {
-  margin: 0;
-  font-family: 'Noto Serif JP', serif;
-  font-size: 10px;
-  font-weight: 300;
-  letter-spacing: 0.3em;
-  color: rgba(61, 107, 64, 0.3);
-}
-
 .subtitle {
   margin: 0;
   font-family: 'Noto Serif JP', serif;
@@ -488,23 +479,8 @@ textarea:focus {
 
 /* -- CALENDAR PANEL -- */
 .calendar-header {
+  justify-content: flex-end;
   margin-bottom: 8px;
-}
-
-.calendar-header h2 {
-  font-family: 'Shippori Mincho B1', serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--matcha-d);
-}
-
-#planSummary {
-  max-width: 760px;
-  font-family: 'Noto Serif JP', serif;
-  font-weight: 300;
-  font-size: 12px;
-  color: var(--text-mid);
-  line-height: 1.5;
 }
 
 .calendar-grid {
